@@ -735,7 +735,6 @@ Java_ge_nikka_edk_FloatingWindow_DrawOn(JNIEnv *env, jclass type, jobject espVie
 			DrawESP(espOverlay, espOverlay.getWidth(), espOverlay.getHeight());
 		}
 	}
-
 }
 
 JNIEXPORT jint JNICALL
