@@ -746,5 +746,5 @@ JNI_OnLoad(JavaVM *vm, void *reserved) {
 
 JNIEXPORT void JNICALL
 JNI_OnUnload(JavaVM *vm, void *reserved) {
-	close(clientSocket);
+	exit(0);
 }
