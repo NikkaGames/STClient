@@ -1,4 +1,5 @@
 *.iml
+/push.sh
 .gradle
 /local.properties
 /.androidide
