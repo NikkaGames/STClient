@@ -78,7 +78,7 @@ ESP espOverlay;
 using namespace std;
 
 bool defchams = false, chams = false, wire = false, glow = false, outline = false, skycolor = false, rainb = false, night = false;
-bool isESP = false, ESPBox = false, ESPLine = false, ESPHealth = false, ESPNick = false, ESPSkel = false;
+bool isESP = false, ESPBox = false, ESPLine = false, ESPHealth = false, ESPNick = false, ESPSkel = false, ugrenade = false;
 bool aimbot = false, wallshot = false, norecoil = false, bunny = false, ammoh = false, firerate = false, fastk = false, fastbomb = false;
 int cradius = 20;
 
@@ -346,8 +346,9 @@ Java_ge_nikka_edk_FloatingWindow_getFeatureList(
         "Button_Unlimited Ammo (Needs ESP!)",//20
         "Button_Fast Knife (Needs ESP!)",//21
         "Button_Fast Bomb (Needs ESP!)",//22
-        "Text_Experimental",//23
-        "ButtonC_Add Items From JSON",//24
+        "Button_Unlimited Grenades (Needs ESP!)",//23
+        "Text_Experimental",//24
+        "ButtonC_Add Items From JSON",//25
         "ButtonHide_Hide Icon"
     };
     int Total_Feature = (sizeof features / sizeof features[0]);
@@ -671,7 +672,25 @@ Java_ge_nikka_edk_FloatingWindow_Call(
             sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
             break;
         }
-        case 24: {
+        case 23: {
+            ugrenade = !ugrenade;
+            rapidjson::Document data;
+            data.SetObject();
+            rapidjson::Document::AllocatorType& allocator = data.GetAllocator();
+
+            data.AddMember("event", "button", allocator);
+            data.AddMember("name", "ugrenade", allocator);
+            data.AddMember("state", ugrenade, allocator);
+
+            rapidjson::StringBuffer sdata;
+            rapidjson::Writer<rapidjson::StringBuffer> writer(sdata);
+            data.Accept(writer);
+
+            std::string eval(string_to_hex(xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
+            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
+            break;
+        }
+        case 25: {
             rapidjson::Document data;
             data.SetObject();
             rapidjson::Document::AllocatorType& allocator = data.GetAllocator();
