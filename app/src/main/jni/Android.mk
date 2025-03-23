@@ -19,7 +19,7 @@ LOCAL_CFLAGS := -w -s -Wno-error=format-security -fvisibility=hidden -fpermissiv
 LOCAL_CPPFLAGS := -w -s -Wno-error=format-security -fvisibility=hidden -Werror -std=c++17
 LOCAL_CPPFLAGS += -Wno-error=c++11-narrowing -fpermissive -Wall -fexceptions
 LOCAL_LDFLAGS += -Wl,--gc-sections,--strip-all,-llog
-LOCAL_LDLIBS := -llog -landroid
+LOCAL_LDLIBS := -llog -landroid -lz
 LOCAL_ARM_NEON := true
 LOCAL_ARM_MODE := arm
 

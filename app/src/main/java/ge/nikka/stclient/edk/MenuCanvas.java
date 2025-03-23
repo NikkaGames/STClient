@@ -130,54 +130,49 @@ public class MenuCanvas extends View implements Runnable {
 							float x, float y, float width, float height, 
 							String text, float size, boolean shadow, 
 							boolean outline, boolean glow, float glowAlpha, boolean gradient, int type) {
-
-		Paint paint = new Paint();
-		paint.setAntiAlias(true);
-		paint.setTextSize(size);
-		paint.setColor(Color.argb(a, r, g, b));
-		paint.setTextAlign(Paint.Align.LEFT);
-		
-		Typeface font =null;
-		switch (type) {
-			case 0:
-				font = Typeface.createFromAsset(ctx.getAssets(), "font.ttf");
-				break;
-			case 1:
-				font = Typeface.createFromAsset(ctx.getAssets(), "fontfunc.ttf");
-				break;
-			case 2:
-				font = Typeface.createFromAsset(ctx.getAssets(), "ficons.ttf");
-				break;
-		}
-		
-		paint.setTypeface(font);
-
-		Rect textBounds = new Rect();
-		paint.getTextBounds(text, 0, text.length(), textBounds);
-		float textX = x + (width - textBounds.width()) / 2f;
-		float textY = y + (height + textBounds.height()) / 2f;
-
-		if (shadow) {
-			Paint shadowPaint = new Paint(paint);
-			shadowPaint.setColor(Color.argb((int) (a * 0.7f), 0, 0, 0));
-			canvas.drawText(text, textX + 2, textY + 2, shadowPaint);
-		}
-
-		if (outline) {
-			Paint outlinePaint = new Paint(paint);
-			outlinePaint.setStyle(Paint.Style.STROKE);
-			outlinePaint.setStrokeWidth(2);  // Adjust stroke width as needed
-			outlinePaint.setColor(Color.argb(a, 0, 0, 0));
-			canvas.drawText(text, textX, textY, outlinePaint);
-		}
-		
-		if (glow) {
-			Paint glowPaint = new Paint(paint);
-			glowPaint.setMaskFilter(new BlurMaskFilter(glowAlpha, BlurMaskFilter.Blur.OUTER));
-			glowPaint.setColor(Color.argb(a, r, g, b));
-			canvas.drawText(text, textX, textY, glowPaint);
-		}
-		canvas.drawText(text, textX, textY, paint);
+        try {                      
+	    	Paint paint = new Paint();
+	    	paint.setAntiAlias(true);
+	    	paint.setTextSize(size);
+	    	paint.setColor(Color.argb(a, r, g, b));
+	    	paint.setTextAlign(Paint.Align.LEFT);
+	    	Typeface font =null;
+	    	switch (type) {
+		    	case 0:
+		    		font = Typeface.createFromAsset(ctx.getAssets(), "font.ttf");
+			    	break;
+	    		case 1:
+			    	font = Typeface.createFromAsset(ctx.getAssets(), "fontfunc.ttf");
+			    	break;
+		    	case 2:
+			    	font = Typeface.createFromAsset(ctx.getAssets(), "ficons.ttf");
+			    	break;
+	    	}
+	    	paint.setTypeface(font);
+	    	Rect textBounds = new Rect();
+	    	paint.getTextBounds(text, 0, text.length(), textBounds);
+	    	float textX = x + (width - textBounds.width()) / 2f;
+	    	float textY = y + (height + textBounds.height()) / 2f;
+	    	if (shadow) {
+	    		Paint shadowPaint = new Paint(paint);
+		    	shadowPaint.setColor(Color.argb((int) (a * 0.7f), 0, 0, 0));
+		    	canvas.drawText(text, textX + 2, textY + 2, shadowPaint);
+	    	}
+	    	if (outline) {
+		    	Paint outlinePaint = new Paint(paint);
+		    	outlinePaint.setStyle(Paint.Style.STROKE);
+		    	outlinePaint.setStrokeWidth(2);  // Adjust stroke width as needed
+		    	outlinePaint.setColor(Color.argb(a, 0, 0, 0));
+		    	canvas.drawText(text, textX, textY, outlinePaint);
+	    	}
+	    	if (glow) {
+		    	Paint glowPaint = new Paint(paint);
+		    	glowPaint.setMaskFilter(new BlurMaskFilter(glowAlpha, BlurMaskFilter.Blur.OUTER));
+		    	glowPaint.setColor(Color.argb(a, r, g, b));
+		    	canvas.drawText(text, textX, textY, glowPaint);
+	    	}
+	    	canvas.drawText(text, textX, textY, paint);
+        } catch (Exception ex) {}
 	}
 
 	public void DrawRectNew(Canvas canvas, int r, int g, int b, int a,

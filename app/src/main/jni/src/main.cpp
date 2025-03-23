@@ -21,10 +21,14 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <csignal>
+#include <codecvt>
 #include "json.hpp"
 #include "AES.h"
 #include "base64.h"
 #include "Includes/Utils.h"
+
+#define LDEBUG
+
 #include "Includes/Logger.h"
 #include "Includes/obfuscaterr.h"
 #include "KittyMemory/MemoryPatch.h"
@@ -175,6 +179,130 @@ std::string AESDecrypt(const std::string& strSrc) {
     return strDest;
 }
 
+struct MemoryStruct {
+    char *memory;
+    size_t size;
+};
+
+static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp) {
+    size_t realsize = size * nmemb;
+    auto *mem = (struct MemoryStruct *) userp;
+    mem->memory = (char *) realloc(mem->memory, mem->size + realsize + 1);
+    if (mem->memory == nullptr) {
+        return 0;
+    }
+    memcpy(&(mem->memory[mem->size]), contents, realsize);
+    mem->size += realsize;
+    mem->memory[mem->size] = 0;
+
+    return realsize;
+}
+
+std::string CalcMD5(std::string s) {
+    std::string result;
+
+    unsigned char hash[MD5_DIGEST_LENGTH];
+    char tmp[4];
+
+    MD5_CTX md5;
+    MD5_Init(&md5);
+    MD5_Update(&md5, s.c_str(), s.length());
+    MD5_Final(hash, &md5);
+    for (unsigned char i : hash) {
+        sprintf(tmp, OBFUSCATE("%02x"), i);
+        result += tmp;
+    }
+    return result;
+}
+
+std::string CalcSHA256(std::string s) {
+    std::string result;
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    char tmp[4];
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    SHA256_Update(&sha256, s.c_str(), s.length());
+    SHA256_Final(hash, &sha256);
+    for (unsigned char i : hash) {
+        sprintf(tmp, OBFUSCATE("%02x"), i);
+        result += tmp;
+    }
+    return result;
+}
+
+std::string g_Token, g_Auth, encryption_key;
+bool bValid = false;
+
+std::string Login(const char *user_key) {
+    using json = nlohmann::ordered_json;
+    std::string userkey_in_string(user_key);
+    char build_id[64] = {0};
+    __system_property_get(OBFUSCATE("ro.build.display.id"), build_id);
+    char build_hardware[64] = {0};
+    __system_property_get(OBFUSCATE("ro.hardware"), build_hardware);
+    std::string bKeyID;
+    bKeyID.reserve(128);
+    bKeyID += build_id;
+    bKeyID += build_hardware;
+
+    if (!bKeyID.empty()) {
+        size_t pos = bKeyID.find(' ');
+        while (pos != std::string::npos) {
+            bKeyID.replace(pos, 1, "");
+            pos = bKeyID.find(' ', pos);
+        }
+    }
+    std::string UUID = bKeyID;
+    std::string errMsg;
+    struct MemoryStruct chunk {};
+    chunk.memory = (char *)malloc(1);
+    chunk.size = 0;
+
+    CURL *curl = curl_easy_init();
+    if (!curl) {
+        return "CURL initialization failed";
+    }
+    
+    CURLcode res;
+    curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
+    std::string sRedLink = OBFUSCATE("https://modkey.space/223/connect");
+    curl_easy_setopt(curl, CURLOPT_URL, sRedLink.c_str());
+    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+
+    struct curl_slist *headers = NULL;
+    headers = curl_slist_append(headers, OBFUSCATE("Content-Type: application/x-www-form-urlencoded"));
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+    char data[4096];
+    sprintf(data, OBFUSCATE("game=Standoff2&user_key=%s&serial=%s"), user_key, UUID.c_str());
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
+
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+
+    res = curl_easy_perform(curl);
+    if (res == CURLE_OK) {
+        return std::string(chunk.memory);
+    } else {
+        return std::string("error");
+    }
+    curl_easy_cleanup(curl);
+}
+
+bool isHex(const std::string& hex) {
+    std::string trimmed = hex;
+    trimmed.erase(0, trimmed.find_first_not_of(std::string(OBFUSCATE(" \t\n\r"))));
+    trimmed.erase(trimmed.find_last_not_of(std::string(OBFUSCATE(" \t\n\r"))) + 1);
+    if (trimmed.length() % 2 != 0) {
+        return false;
+    }
+    return std::all_of(trimmed.begin(), trimmed.end(), [](char c) {
+        return std::isxdigit(c);
+    });
+}
+
 std::string xor_cipher(const std::string &data, const std::string &key, bool mode) {
     std::string result = data;
     uint32_t key1 = 0x1EFF2FE1, key2 = 0x1E00A2E3;
@@ -198,7 +326,7 @@ std::string xor_cipher(const std::string &data, const std::string &key, bool mod
     return result;
 }
 
-std::string ESPData("");
+std::string ESPData(OBFUSCATE("null"));
 
 int clientSocket = -1;
 struct sockaddr_in serverAddr;
@@ -212,12 +340,10 @@ void EspSocket() {
     serverAddr2.sin_family = AF_INET;
     serverAddr2.sin_port = htons(atoi(OBFUSCATE("19133")));
     serverAddr2.sin_addr.s_addr = INADDR_ANY;
-
     if (::bind(serverSocket, (struct sockaddr*)&serverAddr2, sizeof(serverAddr2)) == -1) {
         LOGI("Error binding socket");
         close(serverSocket);
     }
-
     LOGI("Server listening...");
     while (true) {
 		struct sockaddr_in clientAddr;
@@ -228,20 +354,8 @@ void EspSocket() {
             continue;
         }
         buffer[bytesRead] = '\0';
-        std::stringstream val;
-        val << buffer;
-        std::string fdat(xor_cipher(hex_to_string(val.str()), OBFUSCATE("System.Reflection"), false));
-        /*rapidjson::Document data;
-        data.Parse(fdat.c_str());
-        if (data.HasParseError()) {
-            LOGE("JSON parsing error");
-            return;
-        }
-        if (data.HasMember("event") || data["event"].IsString()) {
-            if (equals(data["event"].GetString(), OBFUSCATE("esp"))) {
-                ESPData = fdat;
-            }
-        }*/
+        std::string val(buffer);
+        std::string fdat(xor_cipher(hex_to_string(val), OBFUSCATE("System.Reflection"), false));
         if (contains(fdat, OBFUSCATE("\"event\"")) && contains(fdat, OBFUSCATE("\"esp\""))) {
             ESPData = fdat;
         }
@@ -296,12 +410,18 @@ void DrawESP(ESP esp, int screenWidth, int screenHeight) {
                 esp.DrawLine(Color(255.0f, 255.0f, 255.0f, 255.0f), 2, Vector2(screenWidth / 2, screenHeight / 2), Vector2(location.x + location.width / 2, location.y + location.height / 24));
             }
             if (ESPNick) {
-                if (!obj.HasMember("nk") || !obj["nk"].IsString()) {
-                    LOGE("Missing or invalid 'nk'");
-                    continue;
-                }
-                std::string nickname = hex_to_string(obj["nk"].GetString());
-                esp.DrawTextNew(Color(255.0f, 255.0f, 255.0f, 255.0f), location - Rect(0, (location.height / 1.4f), 0, 0), nickname.c_str(), 22, 1);
+                try {
+                    if (!obj.HasMember("nk") || !obj["nk"].IsString()) {
+                        LOGE("Missing or invalid 'nk'");
+                        continue;
+                    }
+                    std::string nname = obj["nk"].GetString();
+                    if ((nname.length() > 0) && isHex(nname)) {
+                        const char* nkname = xor_cipher(hex_to_string(nname), OBFUSCATE("System.Reflection"), false).c_str();
+                        if (nkname && strlen(nkname) > 0)
+                            esp.DrawTextNew(Color(255.0f, 255.0f, 255.0f, 255.0f), location - Rect(0, (location.height / 1.4f), 0, 0), nkname, 22, 1);
+                    }
+                } catch (...) {}
             }
             if (ESPHealth) {
                 if (!obj.HasMember("hp") || !obj["hp"].IsInt()) {
@@ -332,7 +452,7 @@ Java_ge_nikka_edk_FloatingWindow_getFeatureList(
 		"Button_ESP Box",//6
         "Button_ESP Line",//7
         "Button_ESP Health",//8
-        "Button_ESP Nickname (Unstable)",//9
+        "Button_ESP Nickname",//9
         "Text_Aim Settings",//10
         "SeekBar_Circle Radius_30_200", //11
         "Text_Inventory Changer",//12
@@ -760,6 +880,7 @@ JNIEXPORT jint JNICALL
 JNI_OnLoad(JavaVM *vm, void *reserved) {
     JNIEnv *globalEnv;
     vm->GetEnv((void **) &globalEnv, JNI_VERSION_1_6);
+    //LOGI("LOGIN: %s", Login("NIKA5567").c_str());
     return JNI_VERSION_1_6;
 }
 
