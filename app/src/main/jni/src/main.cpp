@@ -83,7 +83,7 @@ using namespace std;
 
 bool defchams = false, chams = false, wire = false, glow = false, outline = false, skycolor = false, rainb = false, night = false;
 bool isESP = false, ESPBox = false, ESPLine = false, ESPHealth = false, ESPNick = false, ESPSkel = false, ugrenade = false;
-bool aimbot = false, wallshot = false, norecoil = false, bunny = false, ammoh = false, firerate = false, fastk = false, fastbomb = false;
+bool aimbot = false, wallshot = false, norecoil = false, bunny = false, ammoh = false, firerate = false, fastk = false, fastbomb = false, gnuke = false;
 int cradius = 20;
 
 class Cipher {
@@ -454,7 +454,7 @@ Java_ge_nikka_edk_FloatingWindow_getFeatureList(
         "Button_ESP Health",//8
         "Button_ESP Nickname",//9
         "Text_Aim Settings",//10
-        "SeekBar_Circle Radius_30_200", //11
+        "SeekBar_Circle Radius_20_200", //11
         "Text_Inventory Changer",//12
         "ButtonC_Add All Items",//13
         "ButtonC_Clear Items",//14
@@ -467,8 +467,9 @@ Java_ge_nikka_edk_FloatingWindow_getFeatureList(
         "Button_Fast Knife (Needs ESP!)",//21
         "Button_Fast Bomb (Needs ESP!)",//22
         "Button_Unlimited Grenades (Needs ESP!)",//23
-        "Text_Experimental",//24
-        "ButtonC_Add Items From JSON",//25
+        "Button_Grenade Nuke (Needs ESP!)",//24
+        "Text_Experimental",//25
+        "ButtonC_Add Items From JSON",//26
         "ButtonHide_Hide Icon"
     };
     int Total_Feature = (sizeof features / sizeof features[0]);
@@ -810,7 +811,25 @@ Java_ge_nikka_edk_FloatingWindow_Call(
             sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
             break;
         }
-        case 25: {
+        case 24: {
+            gnuke = !gnuke;
+            rapidjson::Document data;
+            data.SetObject();
+            rapidjson::Document::AllocatorType& allocator = data.GetAllocator();
+
+            data.AddMember("event", "button", allocator);
+            data.AddMember("name", "gnuke", allocator);
+            data.AddMember("state", gnuke, allocator);
+
+            rapidjson::StringBuffer sdata;
+            rapidjson::Writer<rapidjson::StringBuffer> writer(sdata);
+            data.Accept(writer);
+
+            std::string eval(string_to_hex(xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
+            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
+            break;
+        }
+        case 26: {
             rapidjson::Document data;
             data.SetObject();
             rapidjson::Document::AllocatorType& allocator = data.GetAllocator();
