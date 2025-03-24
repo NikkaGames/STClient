@@ -83,7 +83,7 @@ using namespace std;
 
 bool defchams = false, chams = false, wire = false, glow = false, outline = false, skycolor = false, rainb = false, night = false;
 bool isESP = false, ESPBox = false, ESPLine = false, ESPHealth = false, ESPNick = false, ESPSkel = false, ugrenade = false;
-bool aimbot = false, wallshot = false, norecoil = false, bunny = false, ammoh = false, firerate = false, fastk = false, fastbomb = false, gnuke = false;
+bool aimbot = false, wallshot = false, norecoil = false, bunny = false, ammoh = false, firerate = false, fastk = false, fastbomb = false, gnuke = false, mvbfr = false;
 int cradius = 20;
 
 class Cipher {
@@ -468,8 +468,9 @@ Java_ge_nikka_edk_FloatingWindow_getFeatureList(
         "Button_Fast Bomb (Needs ESP!)",//22
         "Button_Unlimited Grenades (Needs ESP!)",//23
         "Button_Grenade Nuke (Needs ESP!)",//24
-        "Text_Experimental",//25
-        "ButtonC_Add Items From JSON",//26
+        "Button_Move Before Timer (Needs ESP!)",//25
+        "Text_Experimental",//26
+        "ButtonC_Add Items From JSON",//27
         "ButtonHide_Hide Icon"
     };
     int Total_Feature = (sizeof features / sizeof features[0]);
@@ -829,7 +830,25 @@ Java_ge_nikka_edk_FloatingWindow_Call(
             sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
             break;
         }
-        case 26: {
+        case 25: {
+            mvbfr = !mvbfr;
+            rapidjson::Document data;
+            data.SetObject();
+            rapidjson::Document::AllocatorType& allocator = data.GetAllocator();
+
+            data.AddMember("event", "button", allocator);
+            data.AddMember("name", "mvbfr", allocator);
+            data.AddMember("state", mvbfr, allocator);
+
+            rapidjson::StringBuffer sdata;
+            rapidjson::Writer<rapidjson::StringBuffer> writer(sdata);
+            data.Accept(writer);
+
+            std::string eval(string_to_hex(xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
+            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
+            break;
+        }
+        case 27: {
             rapidjson::Document data;
             data.SetObject();
             rapidjson::Document::AllocatorType& allocator = data.GetAllocator();
