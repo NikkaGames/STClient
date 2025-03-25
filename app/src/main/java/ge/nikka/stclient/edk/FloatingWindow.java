@@ -333,7 +333,7 @@ public class FloatingWindow extends Service {
         layoutParams.gravity = 17;
         
         TextView textvieww = new TextView(this);
-        textvieww.setText("Version: 0.32.3");
+        textvieww.setText("Version: 0.33.0");
         textvieww.setTextSize(15.0f);
         textvieww.setTextColor(Color.WHITE);
         textvieww.setTypeface(google());

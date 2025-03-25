@@ -13,8 +13,8 @@ android {
         applicationId "ge.nikka.stclient"
         minSdk 24
         targetSdk 30
-        versionCode 34
-        versionName "3.4"
+        versionCode 35
+        versionName "3.5"
         
         ndk {
             abiFilters  /*'armeabi-v7a',*/ 'arm64-v8a'/*, 'x86_64'*/
