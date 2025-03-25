@@ -49,6 +49,7 @@
 #include "curl/curl.h"
 
 #define Vector3 Ragdoll3
+#define _(HJB) OBFUSCATE(HJB)
 
 bool contains(std::string in, std::string target) {
     if (strstr(in.c_str(), target.c_str())) {
@@ -62,6 +63,10 @@ bool equals(std::string first, std::string second) {
         return true;
     }
     return false;
+}
+
+uintptr_t str2uptr(const char *c) {
+    return strtoull(c, nullptr, 16);
 }
 
 std::string ReplaceString(std::string subject, const std::string& search, const std::string& replace) {
@@ -305,22 +310,22 @@ bool isHex(const std::string& hex) {
 
 std::string xor_cipher(const std::string &data, const std::string &key, bool mode) {
     std::string result = data;
-    uint32_t key1 = 0x1EFF2FE1, key2 = 0x1E00A2E3;
+    uint32_t key1 = str2uptr(_("0x1EFF2FE1")), key2 = str2uptr(_("0x1E00A2E3"));
     for (char c : key) {
-        key1 = (key1 * 33) ^ static_cast<uint8_t>(c);
-        key2 = (key2 * 31) + static_cast<uint8_t>(c);
+        key1 = (key1 * atoi(_("33"))) ^ static_cast<uint8_t>(c);
+        key2 = (key2 * atoi(_("31"))) + static_cast<uint8_t>(c);
     }
     for (size_t i = 0; i < result.size(); ++i) {
         if (mode) { // Encrypt
-            result[i] = (result[i] << 3) | (result[i] >> 5);
-            result[i] ^= static_cast<uint8_t>(key1 >> (i % 32));
-            result[i] = (result[i] >> 2) | (result[i] << 6);
-            result[i] ^= static_cast<uint8_t>(key2 >> ((i + 5) % 32));
+            result[i] = (result[i] << atoi(_("3"))) | (result[i] >> atoi(_("5")));
+            result[i] ^= static_cast<uint8_t>(key1 >> (i % atoi(_("32"))));
+            result[i] = (result[i] >> atoi(_("2"))) | (result[i] << atoi(_("6")));
+            result[i] ^= static_cast<uint8_t>(key2 >> ((i + atoi(_("5"))) % atoi(_("32"))));
         } else { // Decrypt
-            result[i] ^= static_cast<uint8_t>(key2 >> ((i + 5) % 32));
-            result[i] = (result[i] << 2) | (result[i] >> 6);
-            result[i] ^= static_cast<uint8_t>(key1 >> (i % 32));
-            result[i] = (result[i] >> 3) | (result[i] << 5);
+            result[i] ^= static_cast<uint8_t>(key2 >> ((i + atoi(_("5"))) % atoi(_("32"))));
+            result[i] = (result[i] << atoi(_("2"))) | (result[i] >> atoi(_("6")));
+            result[i] ^= static_cast<uint8_t>(key1 >> (i % atoi(_("32"))));
+            result[i] = (result[i] >> atoi(_("3"))) | (result[i] << atoi(_("5")));
         }
     }
     return result;
