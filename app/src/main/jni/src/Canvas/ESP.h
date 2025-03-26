@@ -190,7 +190,12 @@ void DrawHorizontalHealth(Vector2 start, float w, float health, float maxValue) 
             "DrawTextNew", 
             "(Landroid/graphics/Canvas;IIIIFFFFLjava/lang/String;FZZZFZI)V"
         );
-        jstring jText = _env->NewStringUTF(text.c_str());
+        jstring jText;
+        const char* txts = text.c_str();
+        if (txts && strlen(txts) > 0)
+            jText = _env->NewStringUTF(text.c_str());
+        else
+            jText = _env->NewStringUTF("Player");
         _env->CallVoidMethod(
             _cvsView, 
             drawTextMethod, 

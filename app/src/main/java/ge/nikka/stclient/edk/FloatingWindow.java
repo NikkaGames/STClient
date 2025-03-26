@@ -6,6 +6,7 @@ import android.app.AlertDialog;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -74,8 +75,13 @@ public class FloatingWindow extends Service {
     private LinearLayout Btns;
     private AlertDialog alert;
     private EditText edittextvalue;
+    private AlertDialog aalert = null;
+    private boolean showrage = false;
+    private SharedPreferences prefs;
 
-    public native void Call(int feature, int value);
+    private native void Call(int feature, int value);
+    
+    private native void AddS(String url);
     
     private native String engine();
 
@@ -141,10 +147,11 @@ public class FloatingWindow extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        prefs = getApplicationContext().getSharedPreferences("url", Context.MODE_PRIVATE);
         DrawCanvas();
 
         initFloating();
-		initAlertDiag();
+		initAlertDialog();
 		
 		ValueAnimator colorAnim = ObjectAnimator.ofInt(
         textView, "textColor",
@@ -168,11 +175,11 @@ public class FloatingWindow extends Service {
 
         final Handler handler = new Handler();
         handler.post(new Runnable() {
-				public void run() {
-					Thread();
-					handler.postDelayed(this, 1000);
-				}
-			});
+			public void run() {
+				Thread();
+				handler.postDelayed(this, 1000);
+			}
+		});
     }
 	
 	GradientDrawable gradientDrawable;
@@ -597,7 +604,7 @@ public class FloatingWindow extends Service {
         patches.addView(relativeLayout2);
     }
 
-    private void initAlertDiag() {
+    private void initAlertDialog() {
         LinearLayout linearLayout1 = new LinearLayout(this);
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(-1, -1);
         linearLayout1.setPadding(10, 5, 0, 5);
@@ -669,6 +676,81 @@ public class FloatingWindow extends Service {
         linearLayout1.addView(button);
         alert.setView(linearLayout1);
     }
+    
+    private void initJsonDialog() {
+        LinearLayout linearLayout1 = new LinearLayout(this);
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(-1, -1);
+        linearLayout1.setPadding(10, 5, 0, 5);
+        linearLayout1.setOrientation(LinearLayout.VERTICAL);
+        linearLayout1.setGravity(17);
+        linearLayout1.setLayoutParams(layoutParams);
+        linearLayout1.setBackgroundColor(Color.TRANSPARENT);
+
+        int i = Build.VERSION.SDK_INT >= 26 ? 2038 : 2002;
+        LinearLayout linearLayout = new LinearLayout(this);
+        linearLayout.setLayoutParams(new LinearLayout.LayoutParams(-1, -1));
+        //linearLayout.setBackgroundColor(Color.parseColor("#14171f"));
+        linearLayout.setOrientation(LinearLayout.VERTICAL);
+        FrameLayout frameLayout = new FrameLayout(this);
+        frameLayout.setLayoutParams(new FrameLayout.LayoutParams(-2, -2));
+        frameLayout.addView(linearLayout);
+
+        final TextView textView = new TextView(this);
+        textView.setText("Paste \"pastebin\" URL of your JSON configuration and click apply, tap outside to cancel.");
+        textView.setTextColor(Color.WHITE);
+        textView.setTypeface(google());
+        textView.setLayoutParams(layoutParams);
+
+        EditText edittextval = new EditText(this);
+        edittextval.setLayoutParams(layoutParams);
+        edittextval.setMaxLines(1);
+        edittextval.setWidth(convertDipToPixels(300));
+		edittextval.setBackgroundColor(Color.TRANSPARENT);
+        edittextval.setTextColor(Color.WHITE);
+        edittextval.setTypeface(google());
+        edittextval.setHint("https://pastebin.com/raw/…");
+        edittextval.setHintTextColor(Color.LTGRAY);
+        edittextval.setTextSize(17.0f);
+        String value = prefs.getString("surl", "");
+        edittextval.setText(value);
+
+        Button button = new Button(this);
+        button.setBackgroundColor(Color.TRANSPARENT);
+        button.setTextColor(Color.WHITE);
+        button.setTypeface(google());
+        button.setText("Apply");
+        button.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View view) {
+                String txtval = edittextval.getText().toString();
+				if (!txtval.contains("https")) {
+                    Toast.makeText(getApplicationContext(), "Please enter valid URL!", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                SharedPreferences.Editor editor = prefs.edit();
+                editor.putString("surl", txtval);
+                editor.apply();
+				aalert.dismiss();
+                Thread gtr = new Thread() {
+                    @Override
+                    public void run() {
+                        AddS(txtval);
+                    }
+                };
+                gtr.start();
+			}
+		});
+
+        aalert = new AlertDialog.Builder(this, 2).create();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            Objects.requireNonNull(aalert.getWindow()).setType(i);
+        }
+        linearLayout1.addView(textView);
+        linearLayout1.addView(edittextval);
+        linearLayout1.addView(button);
+        aalert.setView(linearLayout1);
+        aalert.show();
+    }
 
     private boolean ics = false;
     private boolean hide = false;
@@ -716,48 +798,90 @@ public class FloatingWindow extends Service {
 			}
 		});
     }
+    
+    void farv(ViewGroup parent, String searchString) {
+        for (int i = parent.getChildCount() - 1; i >= 0; i--) {
+            View child = parent.getChildAt(i);
+            if (child instanceof Button && ((Button) child).getText().toString().contains(searchString)) {
+                parent.removeViewAt(i);
+            } else if (child instanceof TextView && ((TextView) child).getText().toString().contains(searchString)) {
+                parent.removeViewAt(i);
+            } else if (child instanceof ViewGroup) {
+                farv((ViewGroup) child, searchString);
+            }
+        }
+    }
 
     private void CreateMenuList() {
         String[] listFT = getFeatureList();
+        if (showrage) {
+            farv(this.patches, "WARNING");
+            farv(this.patches, "Unlock Rage Features");
+            addTextN("⚠️ RAGE FEATURES");
+        }
         for (int i = 0; i < listFT.length; i++) {
             final int feature = i;
             String str = listFT[i];
+            if (!showrage) {
             if (str.contains(Base64Utils.Decrypt("U2Vla0Jhcl8="))) {
                 String[] split = str.split("_");
                 addSeekBarN(feature, split[1], Integer.parseInt(split[2]), Integer.parseInt(split[3]), new InterfaceInt() {
-						public void OnWrite(int i) {
-							Call(feature, i);
-						}
-					});
+					public void OnWrite(int i) {
+						Call(feature, i);
+					}
+				});
             } else if (str.contains(Base64Utils.Decrypt("QnV0dG9uXw=="))) {
                 addButtonN(str.replace(Base64Utils.Decrypt("QnV0dG9uXw=="), ""), new InterfaceBtn() {
-						public void OnWrite() {
-							Call(feature, 0);
-						}
-					});
+					public void OnWrite() {
+						Call(feature, 0);
+					}
+				});
             } else if (str.contains(Base64Utils.Decrypt("QnV0dG9uQ18="))) {
                 addButtonN2(str.replace(Base64Utils.Decrypt("QnV0dG9uQ18="), ""), new InterfaceBtn() {
-						public void OnWrite() {
-							Call(feature, 0);
-						}
-					});
-            } else if (str.contains(Base64Utils.Decrypt("QnV0dG9uSGlkZV8="))) {
-                addButtonN(str.replace(Base64Utils.Decrypt("QnV0dG9uSGlkZV8="), ""), new InterfaceBtn() {
-						public void OnWrite() {
-							hide = !hide;
-						}
-					});
+					public void OnWrite() {
+						Call(feature, 0);
+					}
+				});
+            } else if (str.contains(Base64Utils.Decrypt("QnV0dG9uSlNf"))) {
+                addButtonN2(str.replace(Base64Utils.Decrypt("QnV0dG9uSlNf"), ""), new InterfaceBtn() {
+					public void OnWrite() {
+						initJsonDialog();
+					}
+				});
             } else if (str.contains(Base64Utils.Decrypt("VGV4dF8="))) {
                 addTextN(str.replace(Base64Utils.Decrypt("VGV4dF8="), ""));
             } else if (str.contains(Base64Utils.Decrypt("SW5wdXRWYWx1ZV8="))) {
                 addTextField(str.replace(Base64Utils.Decrypt("SW5wdXRWYWx1ZV8="), ""), feature, new InterfaceInt() {
-						@Override
-						public void OnWrite(int i) {
-							Call(feature, 0);
-						}
-					});
+					@Override
+					public void OnWrite(int i) {
+						Call(feature, 0);
+					}
+				});
 			}
+            }
+            if (str.contains(Base64Utils.Decrypt("QnV0dG9uRV8="))) {
+                if (showrage) {
+                    addButtonN(str.replace(Base64Utils.Decrypt("QnV0dG9uRV8="), ""), new InterfaceBtn() {
+				    	public void OnWrite() {
+				    		Call(feature, 0);
+				    	}
+			    	});
+                }
+            }
 		}
+        if (!showrage) {
+            addTextN("Settings");
+            addTextN("");
+            addTextN("⚠️ WARNING: Using Rage features might result ban of your account, \"sooner or later\"");
+            addButtonU("Unlock Rage Features", new InterfaceBtn() {
+                public void OnWrite() {}
+	        });
+            addButtonN("Hide Menu Icon", new InterfaceBtn() {
+		    	public void OnWrite() {
+		    		hide = !hide;
+		    	}
+	    	});
+        }
 	}
     
     public Typeface google() {
@@ -1141,6 +1265,109 @@ public class FloatingWindow extends Service {
 								}
 							},75);				
 						interfaceBtn.OnWrite();
+					}  
+				});
+			this.patches.addView(button2);
+		//}
+    }
+    
+    public void addButtonU(String feature, final InterfaceBtn interfaceBtn) {
+		//if (WrapperReceiver.check) {
+			final GradientDrawable gradientDrawable = new GradientDrawable();
+			gradientDrawable.setShape(GradientDrawable.RECTANGLE);
+			String str2 = "#ffff" + "ffff";
+			gradientDrawable.setColor(Color.parseColor(str2));
+			gradientDrawable.setStroke(3, Color.parseColor(str2));
+			gradientDrawable.setCornerRadius(8.0f);
+			final GradientDrawable gradientDrawable2 = new GradientDrawable();
+			gradientDrawable2.setShape(GradientDrawable.RECTANGLE);
+			gradientDrawable2.setColor(0);
+			gradientDrawable2.setStroke(3, Color.parseColor(str2));
+			gradientDrawable2.setCornerRadius(8.0f);
+
+			final Button button2 = new Button(this);
+			LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(-1, -2);
+			layoutParams.setMargins(7, 5, 7, 5);
+			button2.setText(feature);
+			button2.setTextColor(Color.WHITE);
+			button2.setTextSize(14.4f);
+			button2.setTypeface(google());
+			button2.setAllCaps(false);
+			//button2.setBackgroundColor(Color.TRANSPARENT);
+            button2.setBackground(getResources().getDrawable(R.drawable.btn_def));
+			LinearLayout.LayoutParams layoutParams2 = new LinearLayout.LayoutParams(-1, dp(48));
+			button2.setPadding(3, 3, 3, 3);
+			layoutParams2.bottomMargin = 0;
+			button2.setLayoutParams(layoutParams2);
+            button2.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        ValueAnimator animator = ValueAnimator.ofFloat(1.f, 0.95f);
+                        animator.setDuration(150);
+                        animator.setInterpolator(new android.view.animation.DecelerateInterpolator());
+                        animator.addUpdateListener(animation -> {
+                            float val = (float)animation.getAnimatedValue();
+                            button2.setScaleX(val);
+                            button2.setScaleY(val);
+                        });
+                        animator.start();
+                        break;
+                    case MotionEvent.ACTION_UP:
+                        ValueAnimator animator2 = ValueAnimator.ofFloat(0.95f, 1.f);
+                        animator2.setDuration(150);
+                        animator2.setInterpolator(new android.view.animation.DecelerateInterpolator());
+                        animator2.addUpdateListener(animation -> {
+                            float val = (float)animation.getAnimatedValue();
+                            button2.setScaleX(val);
+                            button2.setScaleY(val);
+                        });
+                        animator2.start();
+                        break;
+                    case MotionEvent.ACTION_CANCEL:
+                        ValueAnimator animator3 = ValueAnimator.ofFloat(0.95f, 1.f);
+                        animator3.setDuration(150);
+                        animator3.setInterpolator(new android.view.animation.DecelerateInterpolator());
+                        animator3.addUpdateListener(animation -> {
+                            float val = (float)animation.getAnimatedValue();
+                            button2.setScaleX(val);
+                            button2.setScaleY(val);
+                        });
+                        animator3.start();
+                        break;
+                }
+                return false;
+            }
+        });
+			final String gays2 = feature;
+            
+			button2.setOnClickListener(new View.OnClickListener() {
+					public void onClick(View v) {
+						//button2.setBackgroundColor(Color.parseColor("#30FF" + "FFFF"));
+                        ValueAnimator anim = ObjectAnimator.ofFloat(14.4f, 16.7f, 14.4f);
+                        anim.setDuration(150);
+                        anim.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                            @Override
+                            public void onAnimationUpdate(ValueAnimator animation) {
+                                button2.setTextSize((float)animation.getAnimatedValue());
+                            }
+                        });
+                        anim.start();
+						//button2.setTextSize(16.7f);
+						button2.setText(Html.fromHtml("<b>" + gays2 + "</b>"));
+						final  Handler handler = new Handler();
+						handler.postDelayed(new Runnable() {
+							@Override
+							public void run() {
+								//button2.setBackgroundColor(Color.TRANSPARENT);
+								button2.setText(gays2);
+								//button2.setTextSize(14.4f);
+							}
+						},75);
+                        //FloatingWindow.this.patches.removeAllViews();
+                        showrage = true;
+                        CreateMenuList();
 					}  
 				});
 			this.patches.addView(button2);

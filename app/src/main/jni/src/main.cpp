@@ -184,6 +184,33 @@ std::string AESDecrypt(const std::string& strSrc) {
     return strDest;
 }
 
+static size_t writebytes(void *data, size_t size, size_t nmemb, void *userp) {
+    size_t realsize = size * nmemb;
+    std::string *str = static_cast<std::string*>(userp);
+    str->append(static_cast<char*>(data), realsize);
+    return realsize;
+}
+
+std::string get_url(const char* site) {
+    CURL *curl = curl_easy_init();
+    std::string datastr;
+    if (curl) {
+        curl_easy_setopt(curl, CURLOPT_URL, site);
+        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+        curl_easy_setopt(curl, CURLOPT_DEFAULT_PROTOCOL, std::string(OBFUSCATE("https")).c_str());
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &writebytes);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &datastr);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+        CURLcode res = curl_easy_perform(curl);
+		char *url = NULL;
+        curl_easy_getinfo(curl, CURLINFO_EFFECTIVE_URL, &url);
+        if (!equals(url, site)) return std::string(OBFUSCATE("0"));
+        curl_easy_cleanup(curl);
+    }
+    return datastr;
+}
+
 struct MemoryStruct {
     char *memory;
     size_t size;
@@ -464,19 +491,18 @@ Java_ge_nikka_edk_FloatingWindow_getFeatureList(
         "ButtonC_Add All Items",//13
         "ButtonC_Clear Items",//14
         "Text_Additional Cheats",//15
-        "Button_Wallshot (Needs ESP!)",//16
+        "ButtonE_Wallshot (Needs ESP!)",//16
 		"Button_No Recoil (Needs ESP!)",//17
-        "Button_Bunnyhop (Needs ESP!)",//18
-        "Button_Fire Rate (Needs ESP!)",//19
+        "ButtonE_Bunnyhop (Needs ESP!)",//18
+        "ButtonE_Fire Rate (Needs ESP!)",//19
         "Button_Unlimited Ammo (Needs ESP!)",//20
         "Button_Fast Knife (Needs ESP!)",//21
-        "Button_Fast Bomb (Needs ESP!)",//22
-        "Button_Unlimited Grenades (Needs ESP!)",//23
-        "Button_Grenade Nuke (Needs ESP!)",//24
+        "ButtonE_Fast Bomb (Needs ESP!)",//22
+        "ButtonE_Unlimited Grenades (Needs ESP!)",//23
+        "ButtonE_Grenade Nuke (Needs ESP!)",//24
         "Button_Move Before Timer (Needs ESP!)",//25
         "Text_Experimental",//26
-        "ButtonC_Add Items From JSON",//27
-        "ButtonHide_Hide Icon"
+        "ButtonJS_Add Items From JSON",//27
     };
     int Total_Feature = (sizeof features / sizeof features[0]);
     ret = (jobjectArray)env->NewObjectArray(Total_Feature, env->FindClass("java/lang/String"), env->NewStringUTF(""));
@@ -853,22 +879,6 @@ Java_ge_nikka_edk_FloatingWindow_Call(
             sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
             break;
         }
-        case 27: {
-            rapidjson::Document data;
-            data.SetObject();
-            rapidjson::Document::AllocatorType& allocator = data.GetAllocator();
-
-            data.AddMember("event", "button", allocator);
-            data.AddMember("name", "jskin", allocator);
-
-            rapidjson::StringBuffer sdata;
-            rapidjson::Writer<rapidjson::StringBuffer> writer(sdata);
-            data.Accept(writer);
-
-            std::string eval(string_to_hex(xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
-            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
-            break;
-        }
     }
 }
 
@@ -911,12 +921,34 @@ Java_ge_nikka_stclient_MainActivity_stopc(
 }
 
 JNIEXPORT void JNICALL
+Java_ge_nikka_edk_FloatingWindow_AddS(JNIEnv *env, jclass type, jstring pbin) {
+    const char* jsv = env->GetStringUTFChars(pbin, 0);
+    if (!jsv || strlen(jsv) <= 0 || !contains(jsv, OBFUSCATE("https"))) return;
+    std::string jval(get_url(jsv));
+    if (jval.length() <= 0 || !contains(jval, OBFUSCATE("skins"))) return;
+    rapidjson::Document data;
+    data.SetObject();
+    rapidjson::Document::AllocatorType& allocator = data.GetAllocator();
+
+    data.AddMember("event", "button", allocator);
+    data.AddMember("name", "jskin", allocator);
+    data.AddMember("value", rapidjson::Value(string_to_hex(jval).c_str(), allocator), allocator);
+
+    rapidjson::StringBuffer sdata;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(sdata);
+    data.Accept(writer);
+
+    std::string eval(string_to_hex(xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
+    sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
+}
+
+JNIEXPORT void JNICALL
 Java_ge_nikka_edk_FloatingWindow_DrawOn(JNIEnv *env, jclass type, jobject espView, jobject canvas) {
-		espOverlay = ESP(env, espView, canvas);
-		if (espOverlay.isValid()) {
-			DrawESP(espOverlay, espOverlay.getWidth(), espOverlay.getHeight());
-		}
+	espOverlay = ESP(env, espView, canvas);
+	if (espOverlay.isValid()) {
+		DrawESP(espOverlay, espOverlay.getWidth(), espOverlay.getHeight());
 	}
+}
 }
 
 JNIEXPORT jint JNICALL
