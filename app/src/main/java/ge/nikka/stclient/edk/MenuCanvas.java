@@ -128,7 +128,7 @@ public class MenuCanvas extends View implements Runnable {
 	
 	public void DrawTextNew(Canvas canvas, int r, int g, int b, int a, 
 							float x, float y, float width, float height, 
-							String text, float size, boolean shadow, 
+							String textt, float size, boolean shadow, 
 							boolean outline, boolean glow, float glowAlpha, boolean gradient, int type) {
         try {                      
 	    	Paint paint = new Paint();
@@ -150,6 +150,10 @@ public class MenuCanvas extends View implements Runnable {
 	    	}
 	    	paint.setTypeface(font);
 	    	Rect textBounds = new Rect();
+            String text = textt;
+            if (!paint.hasGlyph(text)) {
+                text = text.replaceAll("[^\\x20-\\x7E]", "?");
+            }
 	    	paint.getTextBounds(text, 0, text.length(), textBounds);
 	    	float textX = x + (width - textBounds.width()) / 2f;
 	    	float textY = y + (height + textBounds.height()) / 2f;
