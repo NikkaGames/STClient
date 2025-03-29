@@ -6,18 +6,18 @@ plugins {
 
 android {
     namespace 'ge.nikka.stclient'
-    compileSdk 33
-    ndkVersion "24.0.8215888"
+    compileSdk 34
+    ndkVersion "24.0.8215889"
     
     defaultConfig {
         applicationId "ge.nikka.stclient"
         minSdk 24
         targetSdk 30
         versionCode 37
-        versionName "3.71"
+        versionName "3.722"
         
         ndk {
-            abiFilters  /*'armeabi-v7a',*/ 'arm64-v8a'/*, 'x86_64'*/
+            abiFilters  'arm64-v8a'
         }
         
         vectorDrawables { 
@@ -33,8 +33,8 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_11
-        targetCompatibility JavaVersion.VERSION_11
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
     
     externalNativeBuild {
@@ -42,10 +42,10 @@ android {
             path file('src/main/jni/Android.mk')
         }
     }
+    defaultConfig.externalNativeBuild.ndkBuild.arguments("-j4", "--jobs")
 
     buildFeatures {
         viewBinding true
-        
     }
     
 }
