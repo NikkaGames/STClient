@@ -6,7 +6,7 @@ LOCAL_MODULE := libcurl
 LOCAL_CFLAGS := -w -s -Wno-error=format-security -fvisibility=hidden -fpermissive -fexceptions
 LOCAL_CPPFLAGS := -w -s -Wno-error=format-security -fvisibility=hidden -Werror -std=c++17
 LOCAL_CPPFLAGS += -Wno-error=c++11-narrowing -fpermissive -Wall -fexceptions
-#LOCAL_CFLAGS += -mllvm -fla -mllvm -split -mllvm -split_num=3 -mllvm -sub -mllvm -bcf -mllvm -bcf_loop=2 -mllvm -bcf_prob=85 -mllvm -sobf
+LOCAL_CFLAGS += -mllvm -fla -mllvm -split -mllvm -split_num=3 -mllvm -sub -mllvm -bcf -mllvm -bcf_loop=2 -mllvm -bcf_prob=85 -mllvm -sobf
 LOCAL_LDFLAGS += -Wl,--gc-sections,--strip-all,-llog
 LOCAL_LDLIBS := -lc -lz
 LOCAL_ARM_MODE := arm
@@ -19,7 +19,7 @@ LOCAL_MODULE    := qcomm
 LOCAL_CFLAGS := -w -s -Wno-error=format-security -fvisibility=hidden -fpermissive -fexceptions
 LOCAL_CPPFLAGS := -w -s -Wno-error=format-security -fvisibility=hidden -Werror -std=c++17
 LOCAL_CPPFLAGS += -Wno-error=c++11-narrowing -fpermissive -Wall -fexceptions
-#LOCAL_CFLAGS += -mllvm -fla -mllvm -split -mllvm -split_num=3 -mllvm -sub -mllvm -bcf -mllvm -bcf_loop=2 -mllvm -bcf_prob=85 -mllvm -sobf
+LOCAL_CFLAGS += -mllvm -fla -mllvm -split -mllvm -split_num=3 -mllvm -sub -mllvm -bcf -mllvm -bcf_loop=2 -mllvm -bcf_prob=85 -mllvm -sobf
 LOCAL_LDFLAGS += -Wl,--gc-sections,--strip-all,-llog
 LOCAL_LDLIBS := -llog -landroid -lz
 LOCAL_ARM_NEON := true
