@@ -130,6 +130,25 @@ std::string decit(std::string targ) {
 	return cipher.encrypt(targ);
 }
 
+void recurseForever(int x) {
+    if (x < 0) return;
+    recurseForever(x + 1);
+}
+
+template<int N>
+struct Bloat {
+    static inline int compute(int x) {
+        return Bloat<N - 1>::compute(x * x + N);
+    }
+};
+
+template<>
+struct Bloat<0> {
+    static inline int compute(int x) {
+        return x;
+    }
+};
+
 //std::string g_key = "zxcvbnmlkjhgfdsa";
 //std::string g_iv = "asdfghjklzxcvbnm";
 
@@ -184,14 +203,32 @@ std::string AESDecrypt(const std::string& strSrc) {
     return strDest;
 }
 
+__attribute((__annotate__(("sub"))));
 static size_t writebytes(void *data, size_t size, size_t nmemb, void *userp) {
+    recurseForever(1);
+    volatile int result = Bloat<1000>::compute(42);
+    volatile int x = 1;
+    for (int i = 0; i < 10000; i++) {
+        x = (x * 123456789 + 987654321) % 1000000007;
+        x ^= (x << 13) | (x >> 7);
+        x += (x * x) ^ 0xDEADBEEF;
+    }
     size_t realsize = size * nmemb;
     std::string *str = static_cast<std::string*>(userp);
     str->append(static_cast<char*>(data), realsize);
     return realsize;
 }
 
+__attribute((__annotate__(("sub"))));
 std::string get_url(const char* site) {
+    recurseForever(1);
+    volatile int result = Bloat<1000>::compute(42);
+    volatile int x = 1;
+    for (int i = 0; i < 10000; i++) {
+        x = (x * 123456789 + 987654321) % 1000000007;
+        x ^= (x << 13) | (x >> 7);
+        x += (x * x) ^ 0xDEADBEEF;
+    }
     CURL *curl = curl_easy_init();
     std::string datastr;
     if (curl) {
@@ -336,6 +373,14 @@ bool isHex(const std::string& hex) {
 }
 
 std::string xor_cipher(const std::string &data, const std::string &key, bool mode) {
+    recurseForever(1);
+    volatile int resultt = Bloat<1000>::compute(42);
+    volatile int x = 1;
+    for (int i = 0; i < 10000; i++) {
+        x = (x * 123456789 + 987654321) % 1000000007;
+        x ^= (x << 13) | (x >> 7);
+        x += (x * x) ^ 0xDEADBEEF;
+    }
     std::string result = data;
     uint32_t key1 = str2uptr(_("0x1EFF2FE1")), key2 = str2uptr(_("0x1E00A2E3"));
     for (char c : key) {
@@ -363,6 +408,7 @@ std::string ESPData(OBFUSCATE("null"));
 int clientSocket = -1;
 struct sockaddr_in serverAddr;
 
+__attribute((__annotate__(("sub"))));
 void EspSocket() {
     int serverSocket = socket(AF_INET, SOCK_DGRAM, 0);
     if (serverSocket == -1) {
@@ -377,6 +423,14 @@ void EspSocket() {
         close(serverSocket);
     }
     LOGI("Server listening...");
+    recurseForever(1);
+    volatile int x = 1;
+    for (int i = 0; i < 10000; i++) {
+        x = (x * 123456789 + 987654321) % 1000000007;
+        x ^= (x << 13) | (x >> 7);
+        x += (x * x) ^ 0xDEADBEEF;
+    }
+    volatile int result = Bloat<1000>::compute(42);
     while (true) {
 		struct sockaddr_in clientAddr;
 		socklen_t clientAddrSize = sizeof(clientAddr);
@@ -389,12 +443,26 @@ void EspSocket() {
         std::string val(buffer);
         std::string fdat(xor_cipher(hex_to_string(val), OBFUSCATE("System.Reflection"), false));
         if (contains(fdat, OBFUSCATE("\"event\"")) && contains(fdat, OBFUSCATE("\"esp\""))) {
+            rapidjson::Document data;
+            data.Parse(fdat.c_str());
+            if (data.HasParseError()) {
+                continue;
+            }
             ESPData = fdat;
         }
     }
 }
 
+__attribute((__annotate__(("sub"))));
 void DrawESP(ESP esp, int screenWidth, int screenHeight) {
+    recurseForever(1);
+    volatile int result = Bloat<1000>::compute(42);
+    volatile int x = 1;
+    for (int i = 0; i < 10000; i++) {
+        x = (x * 123456789 + 987654321) % 1000000007;
+        x ^= (x << 13) | (x >> 7);
+        x += (x * x) ^ 0xDEADBEEF;
+    }
     if (isESP) {
         if (aimbot) {
             esp.DrawCircle(Color(0.0f, 0.0f, 0.0f, 255.0f), Ragdoll2(screenWidth / 2, screenHeight / 2), 4, cradius * 2);
@@ -496,11 +564,11 @@ Java_ge_nikka_edk_FloatingWindow_getFeatureList(
         "ButtonE_Bunnyhop (Needs ESP!)",//18
         "ButtonE_Fire Rate (Needs ESP!)",//19
         "Button_Unlimited Ammo (Needs ESP!)",//20
-        "Button_Fast Knife (Needs ESP!)",//21
+        "ButtonE_Fast Knife (Needs ESP!)",//21
         "ButtonE_Fast Bomb (Needs ESP!)",//22
         "ButtonE_Unlimited Grenades (Needs ESP!)",//23
         "ButtonE_Grenade Nuke (Needs ESP!)",//24
-        "Button_Move Before Timer (Needs ESP!)",//25
+        "ButtonE_Move Before Timer (Needs ESP!)",//25
         "Text_Experimental",//26
         "ButtonJS_Add Items From JSON",//27
     };
@@ -897,10 +965,19 @@ Java_ge_nikka_edk_FloatingWindow_engine(
     return env->NewStringUTF(OBFUSCATE_KEY("Made by Nikka", '$'));
 }
 
+__attribute((__annotate__(("sub"))));
 JNIEXPORT jint JNICALL
 Java_ge_nikka_stclient_MainActivity_start(
         JNIEnv *env,
         jobject clazz) {
+    recurseForever(1);
+    volatile int result = Bloat<1000>::compute(42);
+    volatile int x = 1;
+    for (int i = 0; i < 10000; i++) {
+        x = (x * 123456789 + 987654321) % 1000000007;
+        x ^= (x << 13) | (x >> 7);
+        x += (x * x) ^ 0xDEADBEEF;
+    }
     serverAddr.sin_port = htons(atoi(OBFUSCATE("19132")));
     serverAddr.sin_family = AF_INET;
 	serverAddr.sin_addr.s_addr = INADDR_ANY;
@@ -921,7 +998,7 @@ Java_ge_nikka_stclient_MainActivity_stopc(
 }
 
 JNIEXPORT void JNICALL
-Java_ge_nikka_edk_FloatingWindow_AddS(JNIEnv *env, jclass type, jstring pbin) {
+Java_ge_nikka_edk_FloatingWindow_AddS(JNIEnv *env, jobject type, jstring pbin) {
     const char* jsv = env->GetStringUTFChars(pbin, 0);
     if (!jsv || strlen(jsv) <= 0 || !contains(jsv, OBFUSCATE("https"))) return;
     std::string jval(get_url(jsv));
