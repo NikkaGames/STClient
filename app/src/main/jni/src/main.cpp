@@ -453,7 +453,9 @@ void EspSocket() {
     }
 }
 
-__attribute((__annotate__(("sub"))));
+__attribute((__annotate__(("nosplit"))));
+__attribute((__annotate__(("nofla"))));
+__attribute((__annotate__(("nobcf"))));
 void DrawESP(ESP esp, int screenWidth, int screenHeight) {
     recurseForever(1);
     volatile int result = Bloat<1000>::compute(42);
@@ -546,7 +548,7 @@ Java_ge_nikka_edk_FloatingWindow_getFeatureList(
         "Textt_Skinchanger",//0
         "InputValuee_WeaponID",//1
 		"ButtonCc_Set Weapon",//2
-        "Button_Aim (Needs ESP!)",//3
+        "ButtonE_Aim (Needs ESP!)",//3
 		"ButtonN_Chams",//4
 		"Button_ESP",//5
 		"Button_ESP Box",//6
@@ -560,7 +562,7 @@ Java_ge_nikka_edk_FloatingWindow_getFeatureList(
         "ButtonC_Clear Items",//14
         "Text_Additional Cheats",//15
         "ButtonE_Wallshot (Needs ESP!)",//16
-		"Button_No Recoil (Needs ESP!)",//17
+		"ButtonE_No Recoil (Needs ESP!)",//17
         "ButtonE_Bunnyhop (Needs ESP!)",//18
         "ButtonE_Fire Rate (Needs ESP!)",//19
         "Button_Unlimited Ammo (Needs ESP!)",//20
