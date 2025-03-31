@@ -548,7 +548,7 @@ Java_ge_nikka_edk_FloatingWindow_getFeatureList(
         "Textt_Skinchanger",//0
         "InputValuee_WeaponID",//1
 		"ButtonCc_Set Weapon",//2
-        "ButtonE_Aim (Needs ESP!)",//3
+        "Button_Aim (Needs ESP!)",//3
 		"ButtonN_Chams",//4
 		"Button_ESP",//5
 		"Button_ESP Box",//6
