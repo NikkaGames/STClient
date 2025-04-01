@@ -277,7 +277,7 @@ std::string xor_cipher(const std::string &data, const std::string &key, bool mod
 }
 
 __attribute((__annotate__(("sub"))));
-std::string JNIURL(JNIEnv *env, jstring urlString) {
+std::string JNIURL(JNIEnv *env, jstring urlString, bool uheader) {
     const char* url = env->GetStringUTFChars(urlString, nullptr);
     jclass urlClass = env->FindClass(_("java/net/URL"));
     jclass httpURLConnectionClass = env->FindClass(_("java/net/HttpURLConnection"));
@@ -319,14 +319,14 @@ std::string JNIURL(JNIEnv *env, jstring urlString) {
 JavaVM* jvm;
 
 __attribute((__annotate__(("sub"))));
-std::string get_url(std::string url) {
+std::string get_url(std::string url, bool uheader) {
     std::string ret;
     std::thread t([&]() {
         JNIEnv* thread_env;
         bool attached = false;
         if (jvm->AttachCurrentThread(&thread_env, nullptr) == JNI_OK) {
             attached = true;
-            ret = JNIURL(thread_env, thread_env->NewStringUTF(url.c_str()));
+            ret = JNIURL(thread_env, thread_env->NewStringUTF(url.c_str()), uheader);
         }
         if (attached) {
             jvm->DetachCurrentThread();
@@ -446,15 +446,15 @@ void DrawESP(ESP esp, int screenWidth, int screenHeight) {
             }
             if (ESPNick) {
                 try {
-                    if (!obj.HasMember("nk") || !obj["nk"].IsString()) {
-                        LOGE("Missing or invalid 'nk'");
-                        continue;
-                    }
-                    std::string nname = obj["nk"].GetString();
-                    if ((nname.length() > 0) && isHex(nname)) {
-                        const char* nkname = xor_cipher(hex_to_string(nname), OBFUSCATE("System.Reflection"), false).c_str();
-                        if (nkname && strlen(nkname) > 0)
-                            esp.DrawTextNew(Color(255.0f, 255.0f, 255.0f, 255.0f), location - Rect(0, (location.height / 1.4f), 0, 0), nkname, 22, 1);
+                    if (obj.HasMember("nk")) {
+                        std::string nname = obj["nk"].GetString();
+                        if (!nname.empty() && isHex(nname)) {
+                            char* nkname = (char*)malloc(nname.length());
+                            strcpy(nkname, xor_cipher(hex_to_string(nname), OBFUSCATE("System.Reflection"), false).c_str());
+                            if (nkname && strlen(nkname) > 0)
+                                esp.DrawTextNew(Color(255.0f, 255.0f, 255.0f, 255.0f), location - Rect(0, (location.height / 1.4f), 0, 0), nkname, 22, 1);
+                            free(nkname);
+                        }
                     }
                 } catch (...) {}
             }
@@ -978,8 +978,8 @@ JNIEXPORT void JNICALL
 Java_ge_nikka_edk_FloatingWindow_AddS(JNIEnv *env, jobject type, jstring pbin) {
     const char *jsv = env->GetStringUTFChars(pbin, 0);
     if (!jsv || strlen(jsv) <= 0 || !contains(jsv, OBFUSCATE("https"))) return;
-    std::string jval(get_url(jsv));
-    if (jval.length() <= 0 || !contains(jval, OBFUSCATE("skins"))) return;
+    std::string jval(get_url(jsv, false));
+    if (jval.empty() || !contains(jval, OBFUSCATE("skins"))) return;
     rapidjson::Document data;
     data.SetObject();
     rapidjson::Document::AllocatorType &allocator = data.GetAllocator();
@@ -992,10 +992,8 @@ Java_ge_nikka_edk_FloatingWindow_AddS(JNIEnv *env, jobject type, jstring pbin) {
     rapidjson::Writer<rapidjson::StringBuffer> writer(sdata);
     data.Accept(writer);
 
-    std::string eval(
-            string_to_hex(xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
-    sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr *) &serverAddr,
-           sizeof(serverAddr));
+    std::string eval(string_to_hex(xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
+    sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr *) &serverAddr, sizeof(serverAddr));
 }
 
 JNIEXPORT void JNICALL
