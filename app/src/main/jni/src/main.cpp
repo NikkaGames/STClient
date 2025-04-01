@@ -40,14 +40,6 @@
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
 
-#include <openssl/evp.h>
-#include <openssl/pem.h>
-#include <openssl/rsa.h>
-#include <openssl/err.h>
-#include <openssl/md5.h>
-
-#include "curl/curl.h"
-
 #define Vector3 Ragdoll3
 #define _(HJB) OBFUSCATE(HJB)
 
@@ -219,35 +211,6 @@ static size_t writebytes(void *data, size_t size, size_t nmemb, void *userp) {
     return realsize;
 }
 
-__attribute((__annotate__(("sub"))));
-std::string get_url(const char* site) {
-    recurseForever(1);
-    volatile int result = Bloat<1000>::compute(42);
-    volatile int x = 1;
-    for (int i = 0; i < 10000; i++) {
-        x = (x * 123456789 + 987654321) % 1000000007;
-        x ^= (x << 13) | (x >> 7);
-        x += (x * x) ^ 0xDEADBEEF;
-    }
-    CURL *curl = curl_easy_init();
-    std::string datastr;
-    if (curl) {
-        curl_easy_setopt(curl, CURLOPT_URL, site);
-        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-        curl_easy_setopt(curl, CURLOPT_DEFAULT_PROTOCOL, std::string(OBFUSCATE("https")).c_str());
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &writebytes);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &datastr);
-        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
-        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
-        CURLcode res = curl_easy_perform(curl);
-		char *url = NULL;
-        curl_easy_getinfo(curl, CURLINFO_EFFECTIVE_URL, &url);
-        if (!equals(url, site)) return std::string(OBFUSCATE("0"));
-        curl_easy_cleanup(curl);
-    }
-    return datastr;
-}
-
 struct MemoryStruct {
     char *memory;
     size_t size;
@@ -267,98 +230,8 @@ static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, voi
     return realsize;
 }
 
-std::string CalcMD5(std::string s) {
-    std::string result;
-
-    unsigned char hash[MD5_DIGEST_LENGTH];
-    char tmp[4];
-
-    MD5_CTX md5;
-    MD5_Init(&md5);
-    MD5_Update(&md5, s.c_str(), s.length());
-    MD5_Final(hash, &md5);
-    for (unsigned char i : hash) {
-        sprintf(tmp, OBFUSCATE("%02x"), i);
-        result += tmp;
-    }
-    return result;
-}
-
-std::string CalcSHA256(std::string s) {
-    std::string result;
-    unsigned char hash[SHA256_DIGEST_LENGTH];
-    char tmp[4];
-    SHA256_CTX sha256;
-    SHA256_Init(&sha256);
-    SHA256_Update(&sha256, s.c_str(), s.length());
-    SHA256_Final(hash, &sha256);
-    for (unsigned char i : hash) {
-        sprintf(tmp, OBFUSCATE("%02x"), i);
-        result += tmp;
-    }
-    return result;
-}
-
 std::string g_Token, g_Auth, encryption_key;
 bool bValid = false;
-
-std::string Login(const char *user_key) {
-    using json = nlohmann::ordered_json;
-    std::string userkey_in_string(user_key);
-    char build_id[64] = {0};
-    __system_property_get(OBFUSCATE("ro.build.display.id"), build_id);
-    char build_hardware[64] = {0};
-    __system_property_get(OBFUSCATE("ro.hardware"), build_hardware);
-    std::string bKeyID;
-    bKeyID.reserve(128);
-    bKeyID += build_id;
-    bKeyID += build_hardware;
-
-    if (!bKeyID.empty()) {
-        size_t pos = bKeyID.find(' ');
-        while (pos != std::string::npos) {
-            bKeyID.replace(pos, 1, "");
-            pos = bKeyID.find(' ', pos);
-        }
-    }
-    std::string UUID = bKeyID;
-    std::string errMsg;
-    struct MemoryStruct chunk {};
-    chunk.memory = (char *)malloc(1);
-    chunk.size = 0;
-
-    CURL *curl = curl_easy_init();
-    if (!curl) {
-        return "CURL initialization failed";
-    }
-    
-    CURLcode res;
-    curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
-    std::string sRedLink = OBFUSCATE("https://modkey.space/223/connect");
-    curl_easy_setopt(curl, CURLOPT_URL, sRedLink.c_str());
-    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-
-    struct curl_slist *headers = NULL;
-    headers = curl_slist_append(headers, OBFUSCATE("Content-Type: application/x-www-form-urlencoded"));
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-
-    char data[4096];
-    sprintf(data, OBFUSCATE("game=Standoff2&user_key=%s&serial=%s"), user_key, UUID.c_str());
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
-
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
-
-    res = curl_easy_perform(curl);
-    if (res == CURLE_OK) {
-        return std::string(chunk.memory);
-    } else {
-        return std::string("error");
-    }
-    curl_easy_cleanup(curl);
-}
 
 bool isHex(const std::string& hex) {
     std::string trimmed = hex;
@@ -401,6 +274,66 @@ std::string xor_cipher(const std::string &data, const std::string &key, bool mod
         }
     }
     return result;
+}
+
+__attribute((__annotate__(("sub"))));
+std::string JNIURL(JNIEnv *env, jstring urlString) {
+    const char* url = env->GetStringUTFChars(urlString, nullptr);
+    jclass urlClass = env->FindClass(_("java/net/URL"));
+    jclass httpURLConnectionClass = env->FindClass(_("java/net/HttpURLConnection"));
+    if (urlClass == nullptr || httpURLConnectionClass == nullptr) {
+        return std::string();
+    }
+    jmethodID urlConstructor = env->GetMethodID(urlClass, _("<init>"), _("(Ljava/lang/String;)V"));
+    jobject urlObj = env->NewObject(urlClass, urlConstructor, urlString);
+    jmethodID openConnectionMethod = env->GetMethodID(urlClass, _("openConnection"), _("()Ljava/net/URLConnection;"));
+    jobject connectionObj = env->CallObjectMethod(urlObj, openConnectionMethod);
+    jobject httpURLConnectionObj = env->NewGlobalRef(connectionObj);
+    jmethodID setRequestMethodMethod = env->GetMethodID(httpURLConnectionClass, _("setRequestMethod"), _("(Ljava/lang/String;)V"));
+    jstring getMethod = env->NewStringUTF(_("GET"));
+    env->CallVoidMethod(httpURLConnectionObj, setRequestMethodMethod, getMethod);
+    jmethodID setRequestPropertyMethod = env->GetMethodID(httpURLConnectionClass, _("setRequestProperty"), _("(Ljava/lang/String;Ljava/lang/String;)V"));
+    env->CallVoidMethod(httpURLConnectionObj, setRequestPropertyMethod, env->NewStringUTF(_("User-Agent")), env->NewStringUTF(_("Mozilla/5.0")));
+    env->CallVoidMethod(httpURLConnectionObj, setRequestPropertyMethod, env->NewStringUTF(_("Authorization")), env->NewStringUTF(_("Bearer YOUR_ACCESS_TOKEN")));
+    jmethodID connectMethod = env->GetMethodID(httpURLConnectionClass, _("connect"), _("()V"));
+    env->CallVoidMethod(httpURLConnectionObj, connectMethod);
+    jmethodID getInputStreamMethod = env->GetMethodID(httpURLConnectionClass, _("getInputStream"), _("()Ljava/io/InputStream;"));
+    jobject inputStreamObj = env->CallObjectMethod(httpURLConnectionObj, getInputStreamMethod);
+    jclass bufferedReaderClass = env->FindClass(_("java/io/BufferedReader"));
+    jmethodID bufferedReaderConstructor = env->GetMethodID(bufferedReaderClass, _("<init>"), _("(Ljava/io/Reader;)V"));
+    jclass inputStreamReaderClass = env->FindClass("java/io/InputStreamReader");
+    jmethodID inputStreamReaderConstructor = env->GetMethodID(inputStreamReaderClass, _("<init>"), _("(Ljava/io/InputStream;)V"));
+    jobject inputStreamReaderObj = env->NewObject(inputStreamReaderClass, inputStreamReaderConstructor, inputStreamObj);
+    jobject bufferedReaderObj = env->NewObject(bufferedReaderClass, bufferedReaderConstructor, inputStreamReaderObj);
+    jmethodID readLineMethod = env->GetMethodID(bufferedReaderClass, _("readLine"), _("()Ljava/lang/String;"));
+    std::stringstream responseStream;
+    jstring line;
+    while ((line = (jstring)env->CallObjectMethod(bufferedReaderObj, readLineMethod)) != nullptr) {
+        const char* lineChars = env->GetStringUTFChars(line, nullptr);
+        responseStream << lineChars;
+        env->ReleaseStringUTFChars(line, lineChars);
+    }
+    return responseStream.str();
+}
+
+JavaVM* jvm;
+
+__attribute((__annotate__(("sub"))));
+std::string get_url(std::string url) {
+    std::string ret;
+    std::thread t([&]() {
+        JNIEnv* thread_env;
+        bool attached = false;
+        if (jvm->AttachCurrentThread(&thread_env, nullptr) == JNI_OK) {
+            attached = true;
+            ret = JNIURL(thread_env, thread_env->NewStringUTF(url.c_str()));
+        }
+        if (attached) {
+            jvm->DetachCurrentThread();
+        }
+    });
+    t.join();
+    return ret;
 }
 
 std::string ESPData(OBFUSCATE("null"));
@@ -545,38 +478,40 @@ Java_ge_nikka_edk_FloatingWindow_getFeatureList(
         jobject activityObject) {
     jobjectArray ret;
     const char *features[] = {
-        "Textt_Skinchanger",//0
-        "InputValuee_WeaponID",//1
-		"ButtonCc_Set Weapon",//2
-        "Button_Aim (Needs ESP!)",//3
-		"ButtonN_Chams",//4
-		"Button_ESP",//5
-		"Button_ESP Box",//6
-        "Button_ESP Line",//7
-        "Button_ESP Health",//8
-        "Button_ESP Nickname",//9
-        "Text_Aim Settings",//10
-        "SeekBar_Circle Radius_20_200", //11
-        "Text_Inventory Changer",//12
-        "ButtonC_Add All Items",//13
-        "ButtonC_Clear Items",//14
-        "Text_Additional Cheats",//15
-        "ButtonE_Wallshot (Needs ESP!)",//16
-		"ButtonE_No Recoil (Needs ESP!)",//17
-        "ButtonE_Bunnyhop (Needs ESP!)",//18
-        "ButtonE_Fire Rate (Needs ESP!)",//19
-        "Button_Unlimited Ammo (Needs ESP!)",//20
-        "ButtonE_Fast Knife (Needs ESP!)",//21
-        "ButtonE_Fast Bomb (Needs ESP!)",//22
-        "ButtonE_Unlimited Grenades (Needs ESP!)",//23
-        "ButtonE_Grenade Nuke (Needs ESP!)",//24
-        "ButtonE_Move Before Timer (Needs ESP!)",//25
-        "Text_Experimental",//26
-        "ButtonJS_Add Items From JSON",//27
+            "Textt_Skinchanger",//0
+            "InputValuee_WeaponID",//1
+            "ButtonCc_Set Weapon",//2
+            "ButtonE_Aim (Needs ESP!)",//3
+            "ButtonN_Chams",//4
+            "Button_ESP",//5
+            "Button_ESP Box",//6
+            "Button_ESP Line",//7
+            "Button_ESP Health",//8
+            "Button_ESP Nickname",//9
+            "Text_Aim Settings",//10
+            "SeekBar_Circle Radius_20_200", //11
+            "Text_Inventory Changer",//12
+            "ButtonC_Add All Items",//13
+            "ButtonC_Clear Items",//14
+            "Text_Additional Cheats",//15
+            "ButtonE_Wallshot (Needs ESP!)",//16
+            "ButtonE_No Recoil (Needs ESP!)",//17
+            "ButtonE_Bunnyhop (Needs ESP!)",//18
+            "ButtonE_Fire Rate (Needs ESP!)",//19
+            "Button_Unlimited Ammo (Needs ESP!)",//20
+            "ButtonE_Fast Knife (Needs ESP!)",//21
+            "ButtonE_Fast Bomb (Needs ESP!)",//22
+            "ButtonE_Unlimited Grenades (Needs ESP!)",//23
+            "ButtonE_Grenade Nuke (Needs ESP!)",//24
+            "ButtonE_Move Before Timer (Needs ESP!)",//25
+            "Text_Experimental",//26
+            "ButtonJS_Add Items From JSON",//27
     };
     int Total_Feature = (sizeof features / sizeof features[0]);
-    ret = (jobjectArray)env->NewObjectArray(Total_Feature, env->FindClass("java/lang/String"), env->NewStringUTF(""));
-    for (int i = 0; i < Total_Feature; i++) env->SetObjectArrayElement(ret, i, env->NewStringUTF(features[i]));
+    ret = (jobjectArray) env->NewObjectArray(Total_Feature, env->FindClass("java/lang/String"),
+                                             env->NewStringUTF(""));
+    for (int i = 0; i < Total_Feature; i++) env->SetObjectArrayElement(ret, i, env->NewStringUTF(
+                features[i]));
     return (ret);
 }
 
@@ -590,8 +525,8 @@ Java_ge_nikka_edk_FloatingWindow_Call(
         case 1: {
             rapidjson::Document data;
             data.SetObject();
-            rapidjson::Document::AllocatorType& allocator = data.GetAllocator();
-            
+            rapidjson::Document::AllocatorType &allocator = data.GetAllocator();
+
             data.AddMember("event", "value", allocator);
             data.AddMember("name", "wid", allocator);
             data.AddMember("value", value, allocator);
@@ -600,14 +535,16 @@ Java_ge_nikka_edk_FloatingWindow_Call(
             rapidjson::Writer<rapidjson::StringBuffer> writer(sdata);
             data.Accept(writer);
 
-            std::string eval(string_to_hex(xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
-            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
+            std::string eval(string_to_hex(
+                    xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
+            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr *) &serverAddr,
+                   sizeof(serverAddr));
             break;
         }
         case 2: {
             rapidjson::Document data;
             data.SetObject();
-            rapidjson::Document::AllocatorType& allocator = data.GetAllocator();
+            rapidjson::Document::AllocatorType &allocator = data.GetAllocator();
 
             data.AddMember("event", "button", allocator);
             data.AddMember("name", "setwp", allocator);
@@ -617,15 +554,17 @@ Java_ge_nikka_edk_FloatingWindow_Call(
             rapidjson::Writer<rapidjson::StringBuffer> writer(sdata);
             data.Accept(writer);
 
-            std::string eval(string_to_hex(xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
-            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
+            std::string eval(string_to_hex(
+                    xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
+            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr *) &serverAddr,
+                   sizeof(serverAddr));
             break;
         }
         case 3: {
             aimbot = !aimbot;
             rapidjson::Document data;
             data.SetObject();
-            rapidjson::Document::AllocatorType& allocator = data.GetAllocator();
+            rapidjson::Document::AllocatorType &allocator = data.GetAllocator();
 
             data.AddMember("event", "button", allocator);
             data.AddMember("name", "aimbot", allocator);
@@ -635,15 +574,17 @@ Java_ge_nikka_edk_FloatingWindow_Call(
             rapidjson::Writer<rapidjson::StringBuffer> writer(sdata);
             data.Accept(writer);
 
-            std::string eval(string_to_hex(xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
-            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
+            std::string eval(string_to_hex(
+                    xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
+            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr *) &serverAddr,
+                   sizeof(serverAddr));
             break;
         }
         case 4: {
             chams = !chams;
             rapidjson::Document data;
             data.SetObject();
-            rapidjson::Document::AllocatorType& allocator = data.GetAllocator();
+            rapidjson::Document::AllocatorType &allocator = data.GetAllocator();
 
             data.AddMember("event", "button", allocator);
             data.AddMember("name", "chams", allocator);
@@ -653,15 +594,17 @@ Java_ge_nikka_edk_FloatingWindow_Call(
             rapidjson::Writer<rapidjson::StringBuffer> writer(sdata);
             data.Accept(writer);
 
-            std::string eval(string_to_hex(xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
-            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
+            std::string eval(string_to_hex(
+                    xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
+            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr *) &serverAddr,
+                   sizeof(serverAddr));
             break;
         }
         case 5: {
             isESP = !isESP;
             rapidjson::Document data;
             data.SetObject();
-            rapidjson::Document::AllocatorType& allocator = data.GetAllocator();
+            rapidjson::Document::AllocatorType &allocator = data.GetAllocator();
 
             data.AddMember("event", "button", allocator);
             data.AddMember("name", "isesp", allocator);
@@ -671,8 +614,10 @@ Java_ge_nikka_edk_FloatingWindow_Call(
             rapidjson::Writer<rapidjson::StringBuffer> writer(sdata);
             data.Accept(writer);
 
-            std::string eval(string_to_hex(xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
-            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
+            std::string eval(string_to_hex(
+                    xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
+            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr *) &serverAddr,
+                   sizeof(serverAddr));
             break;
         }
         case 6: {
@@ -687,7 +632,7 @@ Java_ge_nikka_edk_FloatingWindow_Call(
             ESPHealth = !ESPHealth;
             rapidjson::Document data;
             data.SetObject();
-            rapidjson::Document::AllocatorType& allocator = data.GetAllocator();
+            rapidjson::Document::AllocatorType &allocator = data.GetAllocator();
 
             data.AddMember("event", "button", allocator);
             data.AddMember("name", "esphp", allocator);
@@ -697,15 +642,17 @@ Java_ge_nikka_edk_FloatingWindow_Call(
             rapidjson::Writer<rapidjson::StringBuffer> writer(sdata);
             data.Accept(writer);
 
-            std::string eval(string_to_hex(xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
-            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
+            std::string eval(string_to_hex(
+                    xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
+            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr *) &serverAddr,
+                   sizeof(serverAddr));
             break;
         }
         case 9: {
             ESPNick = !ESPNick;
             rapidjson::Document data;
             data.SetObject();
-            rapidjson::Document::AllocatorType& allocator = data.GetAllocator();
+            rapidjson::Document::AllocatorType &allocator = data.GetAllocator();
 
             data.AddMember("event", "button", allocator);
             data.AddMember("name", "espnick", allocator);
@@ -715,15 +662,17 @@ Java_ge_nikka_edk_FloatingWindow_Call(
             rapidjson::Writer<rapidjson::StringBuffer> writer(sdata);
             data.Accept(writer);
 
-            std::string eval(string_to_hex(xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
-            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
+            std::string eval(string_to_hex(
+                    xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
+            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr *) &serverAddr,
+                   sizeof(serverAddr));
             break;
         }
         case 11: {
             cradius = value;
             rapidjson::Document data;
             data.SetObject();
-            rapidjson::Document::AllocatorType& allocator = data.GetAllocator();
+            rapidjson::Document::AllocatorType &allocator = data.GetAllocator();
 
             data.AddMember("event", "value", allocator);
             data.AddMember("name", "cradius", allocator);
@@ -733,14 +682,16 @@ Java_ge_nikka_edk_FloatingWindow_Call(
             rapidjson::Writer<rapidjson::StringBuffer> writer(sdata);
             data.Accept(writer);
 
-            std::string eval(string_to_hex(xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
-            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
+            std::string eval(string_to_hex(
+                    xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
+            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr *) &serverAddr,
+                   sizeof(serverAddr));
             break;
         }
         case 13: {
             rapidjson::Document data;
             data.SetObject();
-            rapidjson::Document::AllocatorType& allocator = data.GetAllocator();
+            rapidjson::Document::AllocatorType &allocator = data.GetAllocator();
 
             data.AddMember("event", "button", allocator);
             data.AddMember("name", "addskin", allocator);
@@ -749,14 +700,16 @@ Java_ge_nikka_edk_FloatingWindow_Call(
             rapidjson::Writer<rapidjson::StringBuffer> writer(sdata);
             data.Accept(writer);
 
-            std::string eval(string_to_hex(xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
-            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
+            std::string eval(string_to_hex(
+                    xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
+            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr *) &serverAddr,
+                   sizeof(serverAddr));
             break;
         }
         case 14: {
             rapidjson::Document data;
             data.SetObject();
-            rapidjson::Document::AllocatorType& allocator = data.GetAllocator();
+            rapidjson::Document::AllocatorType &allocator = data.GetAllocator();
 
             data.AddMember("event", "button", allocator);
             data.AddMember("name", "clearskin", allocator);
@@ -765,15 +718,17 @@ Java_ge_nikka_edk_FloatingWindow_Call(
             rapidjson::Writer<rapidjson::StringBuffer> writer(sdata);
             data.Accept(writer);
 
-            std::string eval(string_to_hex(xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
-            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
+            std::string eval(string_to_hex(
+                    xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
+            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr *) &serverAddr,
+                   sizeof(serverAddr));
             break;
         }
         case 16: {
             wallshot = !wallshot;
             rapidjson::Document data;
             data.SetObject();
-            rapidjson::Document::AllocatorType& allocator = data.GetAllocator();
+            rapidjson::Document::AllocatorType &allocator = data.GetAllocator();
 
             data.AddMember("event", "button", allocator);
             data.AddMember("name", "wallshot", allocator);
@@ -783,15 +738,17 @@ Java_ge_nikka_edk_FloatingWindow_Call(
             rapidjson::Writer<rapidjson::StringBuffer> writer(sdata);
             data.Accept(writer);
 
-            std::string eval(string_to_hex(xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
-            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
+            std::string eval(string_to_hex(
+                    xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
+            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr *) &serverAddr,
+                   sizeof(serverAddr));
             break;
         }
         case 17: {
             norecoil = !norecoil;
             rapidjson::Document data;
             data.SetObject();
-            rapidjson::Document::AllocatorType& allocator = data.GetAllocator();
+            rapidjson::Document::AllocatorType &allocator = data.GetAllocator();
 
             data.AddMember("event", "button", allocator);
             data.AddMember("name", "recoil", allocator);
@@ -801,15 +758,17 @@ Java_ge_nikka_edk_FloatingWindow_Call(
             rapidjson::Writer<rapidjson::StringBuffer> writer(sdata);
             data.Accept(writer);
 
-            std::string eval(string_to_hex(xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
-            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
+            std::string eval(string_to_hex(
+                    xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
+            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr *) &serverAddr,
+                   sizeof(serverAddr));
             break;
         }
         case 18: {
             bunny = !bunny;
             rapidjson::Document data;
             data.SetObject();
-            rapidjson::Document::AllocatorType& allocator = data.GetAllocator();
+            rapidjson::Document::AllocatorType &allocator = data.GetAllocator();
 
             data.AddMember("event", "button", allocator);
             data.AddMember("name", "bunny", allocator);
@@ -819,15 +778,17 @@ Java_ge_nikka_edk_FloatingWindow_Call(
             rapidjson::Writer<rapidjson::StringBuffer> writer(sdata);
             data.Accept(writer);
 
-            std::string eval(string_to_hex(xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
-            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
+            std::string eval(string_to_hex(
+                    xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
+            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr *) &serverAddr,
+                   sizeof(serverAddr));
             break;
         }
         case 19: {
             firerate = !firerate;
             rapidjson::Document data;
             data.SetObject();
-            rapidjson::Document::AllocatorType& allocator = data.GetAllocator();
+            rapidjson::Document::AllocatorType &allocator = data.GetAllocator();
 
             data.AddMember("event", "button", allocator);
             data.AddMember("name", "firerate", allocator);
@@ -837,15 +798,17 @@ Java_ge_nikka_edk_FloatingWindow_Call(
             rapidjson::Writer<rapidjson::StringBuffer> writer(sdata);
             data.Accept(writer);
 
-            std::string eval(string_to_hex(xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
-            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
+            std::string eval(string_to_hex(
+                    xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
+            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr *) &serverAddr,
+                   sizeof(serverAddr));
             break;
         }
         case 20: {
             ammoh = !ammoh;
             rapidjson::Document data;
             data.SetObject();
-            rapidjson::Document::AllocatorType& allocator = data.GetAllocator();
+            rapidjson::Document::AllocatorType &allocator = data.GetAllocator();
 
             data.AddMember("event", "button", allocator);
             data.AddMember("name", "ammoh", allocator);
@@ -855,15 +818,17 @@ Java_ge_nikka_edk_FloatingWindow_Call(
             rapidjson::Writer<rapidjson::StringBuffer> writer(sdata);
             data.Accept(writer);
 
-            std::string eval(string_to_hex(xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
-            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
+            std::string eval(string_to_hex(
+                    xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
+            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr *) &serverAddr,
+                   sizeof(serverAddr));
             break;
         }
         case 21: {
             fastk = !fastk;
             rapidjson::Document data;
             data.SetObject();
-            rapidjson::Document::AllocatorType& allocator = data.GetAllocator();
+            rapidjson::Document::AllocatorType &allocator = data.GetAllocator();
 
             data.AddMember("event", "button", allocator);
             data.AddMember("name", "fastk", allocator);
@@ -873,15 +838,17 @@ Java_ge_nikka_edk_FloatingWindow_Call(
             rapidjson::Writer<rapidjson::StringBuffer> writer(sdata);
             data.Accept(writer);
 
-            std::string eval(string_to_hex(xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
-            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
+            std::string eval(string_to_hex(
+                    xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
+            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr *) &serverAddr,
+                   sizeof(serverAddr));
             break;
         }
         case 22: {
             fastbomb = !fastbomb;
             rapidjson::Document data;
             data.SetObject();
-            rapidjson::Document::AllocatorType& allocator = data.GetAllocator();
+            rapidjson::Document::AllocatorType &allocator = data.GetAllocator();
 
             data.AddMember("event", "button", allocator);
             data.AddMember("name", "fastbomb", allocator);
@@ -891,15 +858,17 @@ Java_ge_nikka_edk_FloatingWindow_Call(
             rapidjson::Writer<rapidjson::StringBuffer> writer(sdata);
             data.Accept(writer);
 
-            std::string eval(string_to_hex(xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
-            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
+            std::string eval(string_to_hex(
+                    xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
+            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr *) &serverAddr,
+                   sizeof(serverAddr));
             break;
         }
         case 23: {
             ugrenade = !ugrenade;
             rapidjson::Document data;
             data.SetObject();
-            rapidjson::Document::AllocatorType& allocator = data.GetAllocator();
+            rapidjson::Document::AllocatorType &allocator = data.GetAllocator();
 
             data.AddMember("event", "button", allocator);
             data.AddMember("name", "ugrenade", allocator);
@@ -909,15 +878,17 @@ Java_ge_nikka_edk_FloatingWindow_Call(
             rapidjson::Writer<rapidjson::StringBuffer> writer(sdata);
             data.Accept(writer);
 
-            std::string eval(string_to_hex(xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
-            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
+            std::string eval(string_to_hex(
+                    xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
+            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr *) &serverAddr,
+                   sizeof(serverAddr));
             break;
         }
         case 24: {
             gnuke = !gnuke;
             rapidjson::Document data;
             data.SetObject();
-            rapidjson::Document::AllocatorType& allocator = data.GetAllocator();
+            rapidjson::Document::AllocatorType &allocator = data.GetAllocator();
 
             data.AddMember("event", "button", allocator);
             data.AddMember("name", "gnuke", allocator);
@@ -927,15 +898,17 @@ Java_ge_nikka_edk_FloatingWindow_Call(
             rapidjson::Writer<rapidjson::StringBuffer> writer(sdata);
             data.Accept(writer);
 
-            std::string eval(string_to_hex(xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
-            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
+            std::string eval(string_to_hex(
+                    xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
+            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr *) &serverAddr,
+                   sizeof(serverAddr));
             break;
         }
         case 25: {
             mvbfr = !mvbfr;
             rapidjson::Document data;
             data.SetObject();
-            rapidjson::Document::AllocatorType& allocator = data.GetAllocator();
+            rapidjson::Document::AllocatorType &allocator = data.GetAllocator();
 
             data.AddMember("event", "button", allocator);
             data.AddMember("name", "mvbfr", allocator);
@@ -945,8 +918,10 @@ Java_ge_nikka_edk_FloatingWindow_Call(
             rapidjson::Writer<rapidjson::StringBuffer> writer(sdata);
             data.Accept(writer);
 
-            std::string eval(string_to_hex(xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
-            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
+            std::string eval(string_to_hex(
+                    xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
+            sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr *) &serverAddr,
+                   sizeof(serverAddr));
             break;
         }
     }
@@ -967,7 +942,7 @@ Java_ge_nikka_edk_FloatingWindow_engine(
     return env->NewStringUTF(OBFUSCATE_KEY("Made by Nikka", '$'));
 }
 
-__attribute((__annotate__(("sub"))));
+__attribute((__annotate__(("sub")))) ;
 JNIEXPORT jint JNICALL
 Java_ge_nikka_stclient_MainActivity_start(
         JNIEnv *env,
@@ -982,9 +957,9 @@ Java_ge_nikka_stclient_MainActivity_start(
     }
     serverAddr.sin_port = htons(atoi(OBFUSCATE("19132")));
     serverAddr.sin_family = AF_INET;
-	serverAddr.sin_addr.s_addr = INADDR_ANY;
+    serverAddr.sin_addr.s_addr = INADDR_ANY;
     clientSocket = socket(AF_INET, SOCK_DGRAM, 0);
-    if (connect(clientSocket, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) != -1) {
+    if (connect(clientSocket, (struct sockaddr *) &serverAddr, sizeof(serverAddr)) != -1) {
         std::thread(EspSocket).detach();
         return 0;
     } else {
@@ -1001,13 +976,13 @@ Java_ge_nikka_stclient_MainActivity_stopc(
 
 JNIEXPORT void JNICALL
 Java_ge_nikka_edk_FloatingWindow_AddS(JNIEnv *env, jobject type, jstring pbin) {
-    const char* jsv = env->GetStringUTFChars(pbin, 0);
+    const char *jsv = env->GetStringUTFChars(pbin, 0);
     if (!jsv || strlen(jsv) <= 0 || !contains(jsv, OBFUSCATE("https"))) return;
     std::string jval(get_url(jsv));
     if (jval.length() <= 0 || !contains(jval, OBFUSCATE("skins"))) return;
     rapidjson::Document data;
     data.SetObject();
-    rapidjson::Document::AllocatorType& allocator = data.GetAllocator();
+    rapidjson::Document::AllocatorType &allocator = data.GetAllocator();
 
     data.AddMember("event", "button", allocator);
     data.AddMember("name", "jskin", allocator);
@@ -1017,16 +992,18 @@ Java_ge_nikka_edk_FloatingWindow_AddS(JNIEnv *env, jobject type, jstring pbin) {
     rapidjson::Writer<rapidjson::StringBuffer> writer(sdata);
     data.Accept(writer);
 
-    std::string eval(string_to_hex(xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
-    sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
+    std::string eval(
+            string_to_hex(xor_cipher(sdata.GetString(), OBFUSCATE("System.Reflection"), true)));
+    sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr *) &serverAddr,
+           sizeof(serverAddr));
 }
 
 JNIEXPORT void JNICALL
 Java_ge_nikka_edk_FloatingWindow_DrawOn(JNIEnv *env, jclass type, jobject espView, jobject canvas) {
-	espOverlay = ESP(env, espView, canvas);
-	if (espOverlay.isValid()) {
-		DrawESP(espOverlay, espOverlay.getWidth(), espOverlay.getHeight());
-	}
+    espOverlay = ESP(env, espView, canvas);
+    if (espOverlay.isValid()) {
+        DrawESP(espOverlay, espOverlay.getWidth(), espOverlay.getHeight());
+    }
 }
 }
 
@@ -1034,6 +1011,7 @@ JNIEXPORT jint JNICALL
 JNI_OnLoad(JavaVM *vm, void *reserved) {
     JNIEnv *globalEnv;
     vm->GetEnv((void **) &globalEnv, JNI_VERSION_1_6);
+    globalEnv->GetJavaVM(&jvm);
     //LOGI("LOGIN: %s", Login("NIKA5567").c_str());
     return JNI_VERSION_1_6;
 }

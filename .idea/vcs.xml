@@ -2,5 +2,22 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/app/src/main/jni/openssl" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/app/src/main/jni/openssl/cloudflare-quiche" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/app/src/main/jni/openssl/cloudflare-quiche/quiche/deps/boringssl" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/app/src/main/jni/openssl/fuzz/corpora" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/app/src/main/jni/openssl/gost-engine" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/app/src/main/jni/openssl/gost-engine/libprov" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/app/src/main/jni/openssl/krb5" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/app/src/main/jni/openssl/oqs-provider" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/app/src/main/jni/openssl/pkcs11-provider" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/app/src/main/jni/openssl/pkcs11-provider/python-ecdsa" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/app/src/main/jni/openssl/pkcs11-provider/tlsfuzzer" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/app/src/main/jni/openssl/pkcs11-provider/tlslite-ng" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/app/src/main/jni/openssl/pyca-cryptography" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/app/src/main/jni/openssl/python-ecdsa" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/app/src/main/jni/openssl/tlsfuzzer" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/app/src/main/jni/openssl/tlslite-ng" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/app/src/main/jni/openssl/wycheproof" vcs="Git" />
   </component>
 </project>
