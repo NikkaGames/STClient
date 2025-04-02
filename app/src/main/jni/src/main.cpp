@@ -968,7 +968,7 @@ Java_ge_nikka_stclient_FloatingWindow_00024Companion_engine(
 
 __attribute((__annotate__(("sub")))) ;
 JNIEXPORT jint JNICALL
-Java_ge_nikka_stclient_MainActivity_start(
+Java_ge_nikka_stclient_MainActivity_00024Companion_start(
         JNIEnv *env,
         jobject clazz) {
     recurseForever(1);
@@ -1026,7 +1026,7 @@ Java_ge_nikka_stclient_MainActivity_start(
 }
 
 JNIEXPORT void JNICALL
-Java_ge_nikka_stclient_MainActivity_stopc(
+Java_ge_nikka_stclient_MainActivity_00024Companion_stopc(
         JNIEnv *env,
         jobject clazz) {
     close(clientSocket);
