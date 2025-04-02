@@ -2,11 +2,9 @@ package ge.nikka.stclient
 
 import android.Manifest
 import android.app.Activity
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.media.Image
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -23,12 +21,12 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicText
-import androidx.compose.material.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -46,6 +44,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import ge.nikka.stclient.ui.theme.STClientTheme
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -79,6 +79,7 @@ fun MainScreen() {
     val context = LocalContext.current
     var statusText by remember { mutableStateOf("Status: Not connected") }
     var isServiceRunning by remember { mutableStateOf(false) }
+    var showBottomSheet by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -130,25 +131,90 @@ fun MainScreen() {
 
             Spacer(modifier = Modifier.height(64.dp))
 
+            val coroutineScope = rememberCoroutineScope()
+
             ActionButton(
-                text = "START MENU SERVICE",
+                text = "START SERVICE",
                 onClick = {
-                    val stat = MainActivity.start()
-                    if (stat == 0) {
-                        context.startService(Intent(context, FloatingWindow::class.java))
-                        statusText = "Status: Started"
-                        isServiceRunning = true
-                    } else {
-                        Toast.makeText(context, "Failed to connect!", Toast.LENGTH_SHORT).show()
+                    showBottomSheet = true
+                    val th = Thread {
+                        Thread.sleep(300)
+                        val stat = MainActivity.start()
+                        if (stat == 0) {
+                            context.startService(Intent(context, FloatingWindow::class.java))
+                            statusText = "Status: Started"
+                            isServiceRunning = true
+                        } else {
+                            Toast.makeText(context, "Failed to connect!", Toast.LENGTH_SHORT).show()
+                        }
+                        showBottomSheet = false
                     }
+                    th.start()
                 },
                 enabled = !isServiceRunning
             )
 
+            if (showBottomSheet) {
+
+                val bottomSheetState = rememberModalBottomSheetState(
+                    skipPartiallyExpanded = true,
+                    confirmValueChange = { newState ->
+                        newState != SheetValue.Hidden
+                    }
+                )
+
+                ModalBottomSheet(
+                    onDismissRequest = {},
+                    sheetState = bottomSheetState,
+                    containerColor = Color.Black,
+                    contentColor = Color.White,
+                    scrimColor = Color.Black.copy(alpha = 0.7f),
+                    properties = ModalBottomSheetDefaults.properties(
+                        shouldDismissOnBackPress = false
+                    ),
+                    dragHandle = {
+                        Box(
+                            modifier = Modifier
+                                .width(0.dp)
+                                .height(0.dp)
+                                .background(Color.Black)
+                        )
+                    }
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            CircularProgressIndicator(
+                                color = Color.White,
+                                modifier = Modifier
+                                    .size(32.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Loading...",
+                                color = Color.White,
+                                fontSize = 16.sp,
+                                fontFamily = FontFamily(Font(R.font.google)),
+                                modifier = Modifier.padding(start = 8.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(4.dp))
 
             ActionButton(
-                text = "STOP MENU SERVICE",
+                text = "STOP SERVICE",
                 onClick = {
                     MainActivity.stopc()
                     context.stopService(Intent(context, FloatingWindow::class.java))
@@ -162,7 +228,6 @@ fun MainScreen() {
         }
     }
 }
-
 
 @Composable
 fun ActionButton(text: String, onClick: () -> Unit, enabled: Boolean) {
@@ -191,9 +256,6 @@ fun ActionButton(text: String, onClick: () -> Unit, enabled: Boolean) {
         )
     }
 }
-
-
-
 
 fun requestPermissions(activity: Activity) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
