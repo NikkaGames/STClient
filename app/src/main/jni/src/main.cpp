@@ -531,8 +531,8 @@ Java_ge_nikka_stclient_FloatingWindow_00024Companion_getFeatureList(
             "ButtonJS_Add Items From JSON",//27
     };
     int Total_Feature = (sizeof features / sizeof features[0]);
-    ret = (jobjectArray) env->NewObjectArray(Total_Feature, env->FindClass("java/lang/String"),
-                                             env->NewStringUTF(""));
+    ret = (jobjectArray) env->NewObjectArray(Total_Feature, env->FindClass(_("java/lang/String")),
+                                             env->NewStringUTF(_("")));
     for (int i = 0; i < Total_Feature; i++) env->SetObjectArrayElement(ret, i, env->NewStringUTF(
                 features[i]));
     return (ret);
@@ -979,11 +979,11 @@ Java_ge_nikka_stclient_MainActivity_00024Companion_start(
         x ^= (x << 13) | (x >> 7);
         x += (x * x) ^ 0xDEADBEEF;
     }
-    serverAddr.sin_port = htons(atoi(OBFUSCATE("19132")));
+    serverAddr.sin_port = htons(atoi(_("19132")));
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_addr.s_addr = INADDR_ANY;
     clientSocket = socket(AF_INET, SOCK_DGRAM, 0);
-    
+
     rapidjson::Document data;
     data.SetObject();
     rapidjson::Document::AllocatorType &allocator = data.GetAllocator();
@@ -995,34 +995,27 @@ Java_ge_nikka_stclient_MainActivity_00024Companion_start(
     rapidjson::StringBuffer sdata;
     rapidjson::Writer<rapidjson::StringBuffer> writer(sdata);
     data.Accept(writer);
-    
+
     tmval = AESEncrypt(xor_cipher(sdata.GetString(), _("AppDomain"), true));
     std::string sht = xor_cipher(AESDecrypt(get_url(_("https://8188-149-3-106-116.ngrok-free.app/vip/mod.php"), true)), _("AppDomain"), false);
     tmval.clear();
-    
-    LOGI(sht.c_str());
-    
+
     rapidjson::Document rdata;
     rdata.Parse(sht.c_str());
-    if (rdata.HasParseError()) {
-        LOGE(OBFUSCATE("JSON parsing error"));
+    if (rdata.HasParseError())
+        return -1;
+    if (!rdata.HasMember(_("timestamp")) || !rdata[(const char*)_("timestamp")].IsString())
+        return -1;
+    if (!compare(std::to_string(time(NULL)).substr(0, 7), rdata[(const char*)_("timestamp")].GetString()))
         return 2;
-    }
-    if (!rdata.HasMember("timestamp") || !rdata["timestamp"].IsString()) {
-        return 0;
-    }
-    if (!compare(std::to_string(time(NULL)).substr(0, 7), rdata["timestamp"].GetString())) {
-        LOGE("DATE NOT MATCH");
-    } else {
-        LOGI("DATE MATCH %s and %s", std::to_string(time(NULL)).substr(0, 7).c_str(), rdata["timestamp"].GetString());
-    }
-    
+    if (compare(std::string(_("failed")), rdata[(const char*)_("status")].GetString()))
+        return 3;
+
     if (connect(clientSocket, (struct sockaddr *) &serverAddr, sizeof(serverAddr)) != -1) {
         std::thread(EspSocket).detach();
         return 0;
-    } else {
+    } else
         return -1;
-    }
 }
 
 JNIEXPORT void JNICALL
@@ -1068,7 +1061,13 @@ JNI_OnLoad(JavaVM *vm, void *reserved) {
     JNIEnv *globalEnv;
     vm->GetEnv((void **) &globalEnv, JNI_VERSION_1_6);
     globalEnv->GetJavaVM(&jvm);
-    //LOGI("LOGIN: %s", Login("NIKA5567").c_str());
+    volatile int x = 1;
+    for (int i = 0; i < 10000; i++) {
+        x = (x * 123456789 + 987654321) % 1000000007;
+        x ^= (x << 13) | (x >> 7);
+        x += (x * x) ^ 0xDEADBEEF;
+        x += (x * x) ^ 0xBEEFDEAD;
+    }
     return JNI_VERSION_1_6;
 }
 

@@ -5,6 +5,8 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Paint
+import android.graphics.drawable.ShapeDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -33,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -77,9 +80,11 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainScreen() {
     val context = LocalContext.current
-    var statusText by remember { mutableStateOf("Status: Not connected") }
+    var statusText by remember { mutableStateOf("Status: idle") }
     var isServiceRunning by remember { mutableStateOf(false) }
     var showBottomSheet by remember { mutableStateOf(false) }
+    var showTimeSheet by remember { mutableStateOf(false) }
+    var showFSheet by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -131,8 +136,6 @@ fun MainScreen() {
 
             Spacer(modifier = Modifier.height(64.dp))
 
-            val coroutineScope = rememberCoroutineScope()
-
             ActionButton(
                 text = "START SERVICE",
                 onClick = {
@@ -142,8 +145,11 @@ fun MainScreen() {
                         val stat = MainActivity.start()
                         if (stat == 0) {
                             context.startService(Intent(context, FloatingWindow::class.java))
-                            statusText = "Status: Started"
+                            statusText = "Status: started"
                             isServiceRunning = true
+                            showFSheet = true
+                        } else if (stat == 2) {
+                            showTimeSheet = true
                         } else {
                             Toast.makeText(context, "Failed to connect!", Toast.LENGTH_SHORT).show()
                         }
@@ -154,21 +160,100 @@ fun MainScreen() {
                 enabled = !isServiceRunning
             )
 
-            if (showBottomSheet) {
+            Spacer(modifier = Modifier.height(4.dp))
 
+            ActionButton(
+                text = "STOP SERVICE",
+                onClick = {
+                    MainActivity.stopc()
+                    context.stopService(Intent(context, FloatingWindow::class.java))
+                    isServiceRunning = false
+                    statusText = "Status: disconnected"
+                    MainActivity.thiz?.finish()
+                    Process.killProcess(Process.myPid())
+                },
+                enabled = isServiceRunning
+            )
+
+            if (showTimeSheet) {
+                ModalBottomSheet(
+                    onDismissRequest = {
+                        showTimeSheet = false
+                        MainActivity.thiz?.finish()
+                        Process.killProcess(Process.myPid())
+                    },
+                    containerColor = Color(0xFF090909),
+                    contentColor = Color.White
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(120.dp)
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(
+                            text = "Timestamp mismatch or connection error!",
+                            color = Color.White,
+                            fontSize = 16.sp,
+                            fontFamily = FontFamily(Font(R.font.google)),
+                            modifier = Modifier.padding(start = 8.dp)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                }
+            }
+
+            if (showFSheet) {
+                ModalBottomSheet(
+                    onDismissRequest = {
+                        showFSheet = false
+                        MainActivity.thiz?.finish()
+                        Process.killProcess(Process.myPid())
+                    },
+                    containerColor = Color(0xFF090909),
+                    contentColor = Color.White
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(120.dp)
+                            .padding(2.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(
+                            text = "Unknown Device",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontFamily = FontFamily(Font(R.font.googlebold))
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Your device is unrecognized and can't be allowed to continue!",
+                            color = Color.White,
+                            fontSize = 16.sp,
+                            fontFamily = FontFamily(Font(R.font.google)),
+                            modifier = Modifier.padding(start = 8.dp)
+                        )
+                        Spacer(modifier = Modifier.height(32.dp))
+                    }
+                }
+            }
+
+            if (showBottomSheet) {
                 val bottomSheetState = rememberModalBottomSheetState(
                     skipPartiallyExpanded = true,
                     confirmValueChange = { newState ->
                         newState != SheetValue.Hidden
                     }
                 )
-
                 ModalBottomSheet(
                     onDismissRequest = {},
                     sheetState = bottomSheetState,
-                    containerColor = Color.Black,
+                    containerColor = Color(0xFF090909),
                     contentColor = Color.White,
-                    scrimColor = Color.Black.copy(alpha = 0.7f),
+                    scrimColor = Color.Black.copy(alpha = 0.8f),
                     properties = ModalBottomSheetDefaults.properties(
                         shouldDismissOnBackPress = false
                     ),
@@ -184,13 +269,17 @@ fun MainScreen() {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .height(120.dp)
                             .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 24.dp),
                             horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
                             CircularProgressIndicator(
                                 color = Color.White,
@@ -210,21 +299,6 @@ fun MainScreen() {
                     }
                 }
             }
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            ActionButton(
-                text = "STOP SERVICE",
-                onClick = {
-                    MainActivity.stopc()
-                    context.stopService(Intent(context, FloatingWindow::class.java))
-                    isServiceRunning = false
-                    statusText = "Status: Disconnected"
-                    MainActivity.thiz?.finish()
-                    Process.killProcess(Process.myPid())
-                },
-                enabled = isServiceRunning
-            )
         }
     }
 }
