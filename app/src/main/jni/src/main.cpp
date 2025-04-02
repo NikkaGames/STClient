@@ -496,7 +496,7 @@ void DrawESP(ESP esp, int screenWidth, int screenHeight) {
 extern "C" {
 
 JNIEXPORT jobjectArray  JNICALL
-Java_ge_nikka_edk_FloatingWindow_getFeatureList(
+Java_ge_nikka_stclient_FloatingWindow_00024Companion_getFeatureList(
         JNIEnv *env,
         jobject activityObject) {
     jobjectArray ret;
@@ -539,7 +539,7 @@ Java_ge_nikka_edk_FloatingWindow_getFeatureList(
 }
 
 JNIEXPORT void JNICALL
-Java_ge_nikka_edk_FloatingWindow_Call(
+Java_ge_nikka_stclient_FloatingWindow_00024Companion_Call(
         JNIEnv *env,
         jobject activityObject,
         jint feature,
@@ -952,14 +952,15 @@ Java_ge_nikka_edk_FloatingWindow_Call(
 
 
 JNIEXPORT jstring JNICALL
-Java_ge_nikka_edk_FloatingWindow_SliderString(
+Java_ge_nikka_stclient_FloatingWindow_00024Companion_SliderString(
         JNIEnv *env,
         jobject clazz, jint feature, jint value) {
     return env->NewStringUTF(NULL);
 }
 
+__attribute((__annotate__(("sub")))) ;
 JNIEXPORT jstring JNICALL
-Java_ge_nikka_edk_FloatingWindow_engine(
+Java_ge_nikka_stclient_FloatingWindow_00024Companion_engine(
         JNIEnv *env,
         jobject clazz) {
     return env->NewStringUTF(OBFUSCATE_KEY("Made by Nikka", '$'));
@@ -996,7 +997,7 @@ Java_ge_nikka_stclient_MainActivity_start(
     data.Accept(writer);
     
     tmval = AESEncrypt(xor_cipher(sdata.GetString(), _("AppDomain"), true));
-    std::string sht = xor_cipher(AESDecrypt(get_url("https://e0ee-149-3-106-116.ngrok-free.app/vip/mod.php", true)), _("AppDomain"), false);
+    std::string sht = xor_cipher(AESDecrypt(get_url(_("https://8188-149-3-106-116.ngrok-free.app/vip/mod.php"), true)), _("AppDomain"), false);
     tmval.clear();
     
     LOGI(sht.c_str());
@@ -1032,7 +1033,7 @@ Java_ge_nikka_stclient_MainActivity_stopc(
 }
 
 JNIEXPORT void JNICALL
-Java_ge_nikka_edk_FloatingWindow_AddS(JNIEnv *env, jobject type, jstring pbin) {
+Java_ge_nikka_stclient_FloatingWindow_00024Companion_AddS(JNIEnv *env, jobject type, jstring pbin) {
     const char *jsv = env->GetStringUTFChars(pbin, 0);
     if (!jsv || strlen(jsv) <= 0 || !contains(jsv, OBFUSCATE("https"))) return;
     std::string jval(get_url(jsv, false));
@@ -1054,7 +1055,7 @@ Java_ge_nikka_edk_FloatingWindow_AddS(JNIEnv *env, jobject type, jstring pbin) {
 }
 
 JNIEXPORT void JNICALL
-Java_ge_nikka_edk_FloatingWindow_DrawOn(JNIEnv *env, jclass type, jobject espView, jobject canvas) {
+Java_ge_nikka_stclient_FloatingWindow_00024Companion_DrawOn(JNIEnv *env, jobject type, jobject espView, jobject canvas) {
     espOverlay = ESP(env, espView, canvas);
     if (espOverlay.isValid()) {
         DrawESP(espOverlay, espOverlay.getWidth(), espOverlay.getHeight());

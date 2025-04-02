@@ -1,13 +1,14 @@
 
 plugins {
     id 'com.android.application'
-    
+    id 'org.jetbrains.kotlin.android'
+
 }
 
 android {
     namespace 'ge.nikka.stclient'
-    compileSdk 34
-    ndkVersion "24.0.8215888"
+    compileSdk 35
+    ndkVersion "24.0.8215889"
     
     defaultConfig {
         applicationId "ge.nikka.stclient"
@@ -74,7 +75,10 @@ android {
     buildFeatures {
         viewBinding true
     }
-    
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+
 }
 
 dependencies {
@@ -85,4 +89,5 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-livedata:2.5.1")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation("androidx.navigation:navigation-ui:2.5.3")
+    implementation 'androidx.core:core-ktx:1.15.0'
 }
