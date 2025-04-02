@@ -22,6 +22,9 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicText
@@ -32,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -47,6 +51,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        thiz = this
         requestPermissions(this)
         setContent {
             STClientTheme {
@@ -61,6 +66,8 @@ class MainActivity : ComponentActivity() {
     }
 
     companion object {
+        @JvmField
+        var thiz : MainActivity? = null
         external fun start(): Int
         external fun stopc()
     }
@@ -116,7 +123,7 @@ fun MainScreen() {
         ) {
             Text(
                 statusText,
-                fontSize = 20.sp,
+                fontSize = 18.sp,
                 color = Color.White,
                 fontFamily = FontFamily(Font(R.font.google))
             )
@@ -147,6 +154,7 @@ fun MainScreen() {
                     context.stopService(Intent(context, FloatingWindow::class.java))
                     isServiceRunning = false
                     statusText = "Status: Disconnected"
+                    MainActivity.thiz?.finish()
                     Process.killProcess(Process.myPid())
                 },
                 enabled = isServiceRunning
@@ -158,21 +166,34 @@ fun MainScreen() {
 
 @Composable
 fun ActionButton(text: String, onClick: () -> Unit, enabled: Boolean) {
-    var pressed by remember { mutableStateOf(false) }
-    val scale by animateFloatAsState(targetValue = if (pressed) 0.95f else 1f, animationSpec = tween(150))
-
+    val interactionSource = remember { MutableInteractionSource() }
+    val scale by animateFloatAsState(
+        targetValue = if (interactionSource.collectIsPressedAsState().value) 0.95f else 1f,
+        animationSpec = tween(150)
+    )
+    val alpha = if (enabled) 1f else 0.4f
     Button(
         onClick = onClick,
         enabled = enabled,
-        modifier = Modifier.graphicsLayer(
-            scaleX = scale,
-            scaleY = scale)
-            .clickable { pressed = true }
+        interactionSource = interactionSource,
+        modifier = Modifier
+            .graphicsLayer(
+                scaleX = scale,
+                scaleY = scale,
+                alpha = alpha
+            )
             .padding(2.dp)
     ) {
-        Text(text, fontSize = 16.sp, fontFamily = FontFamily(Font(R.font.googlebold)))
+        Text(
+            text,
+            fontSize = 16.sp,
+            fontFamily = FontFamily(Font(R.font.googlebold))
+        )
     }
 }
+
+
+
 
 fun requestPermissions(activity: Activity) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
