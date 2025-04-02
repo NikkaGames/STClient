@@ -57,6 +57,15 @@ bool equals(std::string first, std::string second) {
     return false;
 }
 
+bool compare(const std::string &s1, const std::string &s2) {
+    if (s1.length() != s2.length()) return false;
+    int result = 0;
+    for (size_t i = 0; i < s1.length(); i++) {
+        result |= (s1[i] ^ s2[i]);
+    }
+    return result == 0;
+}
+
 uintptr_t str2uptr(const char *c) {
     return strtoull(c, nullptr, 16);
 }
@@ -140,6 +149,15 @@ struct Bloat<0> {
         return x;
     }
 };
+
+std::string gen_gsf(const int len) {
+    string id;
+    static const char gsfid[] = "abcdef654321";
+    srand((unsigned) time(nullptr) * getpid());
+    id.reserve(len);
+    for (int i = 0; i < len; ++i) id += gsfid[rand() % (sizeof(gsfid) - 1)];
+    return id;
+}
 
 //std::string g_key = "zxcvbnmlkjhgfdsa";
 //std::string g_iv = "asdfghjklzxcvbnm";
@@ -276,6 +294,8 @@ std::string xor_cipher(const std::string &data, const std::string &key, bool mod
     return result;
 }
 
+std::string tmval(_("None"));
+
 __attribute((__annotate__(("sub"))));
 std::string JNIURL(JNIEnv *env, jstring urlString, bool uheader) {
     const char* url = env->GetStringUTFChars(urlString, nullptr);
@@ -293,8 +313,11 @@ std::string JNIURL(JNIEnv *env, jstring urlString, bool uheader) {
     jstring getMethod = env->NewStringUTF(_("GET"));
     env->CallVoidMethod(httpURLConnectionObj, setRequestMethodMethod, getMethod);
     jmethodID setRequestPropertyMethod = env->GetMethodID(httpURLConnectionClass, _("setRequestProperty"), _("(Ljava/lang/String;Ljava/lang/String;)V"));
-    env->CallVoidMethod(httpURLConnectionObj, setRequestPropertyMethod, env->NewStringUTF(_("User-Agent")), env->NewStringUTF(_("Mozilla/5.0")));
-    env->CallVoidMethod(httpURLConnectionObj, setRequestPropertyMethod, env->NewStringUTF(_("Authorization")), env->NewStringUTF(_("Bearer YOUR_ACCESS_TOKEN")));
+    if (uheader) {
+        env->CallVoidMethod(httpURLConnectionObj, setRequestPropertyMethod, env->NewStringUTF(_("Content-Type")), env->NewStringUTF(_("text/plain")));
+        env->CallVoidMethod(httpURLConnectionObj, setRequestPropertyMethod, env->NewStringUTF(_("Ngrok-Skip-Browser-Warning")), env->NewStringUTF(_("true")));
+        env->CallVoidMethod(httpURLConnectionObj, setRequestPropertyMethod, env->NewStringUTF(_("Qcom-Soc-Pep")), env->NewStringUTF(tmval.c_str()));
+    }
     jmethodID connectMethod = env->GetMethodID(httpURLConnectionClass, _("connect"), _("()V"));
     env->CallVoidMethod(httpURLConnectionObj, connectMethod);
     jmethodID getInputStreamMethod = env->GetMethodID(httpURLConnectionClass, _("getInputStream"), _("()Ljava/io/InputStream;"));
@@ -306,14 +329,14 @@ std::string JNIURL(JNIEnv *env, jstring urlString, bool uheader) {
     jobject inputStreamReaderObj = env->NewObject(inputStreamReaderClass, inputStreamReaderConstructor, inputStreamObj);
     jobject bufferedReaderObj = env->NewObject(bufferedReaderClass, bufferedReaderConstructor, inputStreamReaderObj);
     jmethodID readLineMethod = env->GetMethodID(bufferedReaderClass, _("readLine"), _("()Ljava/lang/String;"));
-    std::stringstream responseStream;
+    std::string responseStream;
     jstring line;
     while ((line = (jstring)env->CallObjectMethod(bufferedReaderObj, readLineMethod)) != nullptr) {
         const char* lineChars = env->GetStringUTFChars(line, nullptr);
-        responseStream << lineChars;
+        responseStream.append(lineChars);
         env->ReleaseStringUTFChars(line, lineChars);
     }
-    return responseStream.str();
+    return responseStream;
 }
 
 JavaVM* jvm;
@@ -959,6 +982,40 @@ Java_ge_nikka_stclient_MainActivity_start(
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_addr.s_addr = INADDR_ANY;
     clientSocket = socket(AF_INET, SOCK_DGRAM, 0);
+    
+    rapidjson::Document data;
+    data.SetObject();
+    rapidjson::Document::AllocatorType &allocator = data.GetAllocator();
+
+    data.AddMember(rapidjson::Value(_("ctoken"), allocator), rapidjson::Value(gen_gsf(8).c_str(), allocator), allocator);
+    data.AddMember(rapidjson::Value(_("uuid"), allocator), rapidjson::Value(_("b2Vy6iqcYIb3TN4v3yFfYbU1LMzOLPi9twdPHgrKOWwv1cGMICBV"), allocator), allocator);
+    data.AddMember(rapidjson::Value(_("timestamp"), allocator), rapidjson::Value(std::to_string(time(NULL)).substr(0, 7).c_str(), allocator), allocator);
+
+    rapidjson::StringBuffer sdata;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(sdata);
+    data.Accept(writer);
+    
+    tmval = AESEncrypt(xor_cipher(sdata.GetString(), _("AppDomain"), true));
+    std::string sht = xor_cipher(AESDecrypt(get_url("https://e0ee-149-3-106-116.ngrok-free.app/vip/mod.php", true)), _("AppDomain"), false);
+    tmval.clear();
+    
+    LOGI(sht.c_str());
+    
+    rapidjson::Document rdata;
+    rdata.Parse(sht.c_str());
+    if (rdata.HasParseError()) {
+        LOGE(OBFUSCATE("JSON parsing error"));
+        return 2;
+    }
+    if (!rdata.HasMember("timestamp") || !rdata["timestamp"].IsString()) {
+        return 0;
+    }
+    if (!compare(std::to_string(time(NULL)).substr(0, 7), rdata["timestamp"].GetString())) {
+        LOGE("DATE NOT MATCH");
+    } else {
+        LOGI("DATE MATCH %s and %s", std::to_string(time(NULL)).substr(0, 7).c_str(), rdata["timestamp"].GetString());
+    }
+    
     if (connect(clientSocket, (struct sockaddr *) &serverAddr, sizeof(serverAddr)) != -1) {
         std::thread(EspSocket).detach();
         return 0;

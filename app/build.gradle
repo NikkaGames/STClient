@@ -7,12 +7,12 @@ plugins {
 android {
     namespace 'ge.nikka.stclient'
     compileSdk 34
-    ndkVersion "24.0.8215889"
+    ndkVersion "24.0.8215888"
     
     defaultConfig {
         applicationId "ge.nikka.stclient"
         minSdk 24
-        targetSdk 30
+        targetSdk 34
         versionCode 37
         versionName "3.72"
         
@@ -24,10 +24,37 @@ android {
             useSupportLibrary true
         }
     }
+    
+    signingConfigs {
+        release {
+            storeFile file("stkey.jks")
+            storePassword "nikastapp78"
+            keyAlias "stapp"
+            keyPassword "nikastapp78"
+            v1SigningEnabled true
+            v2SigningEnabled true
+        }
+        debug {
+            storeFile file("stkey.jks")
+            storePassword "nikastapp78"
+            keyAlias "stapp"
+            keyPassword "nikastapp78"
+            v1SigningEnabled true
+            v2SigningEnabled true
+        }
+    }
 
     buildTypes {
         release {
+            debuggable false
             minifyEnabled true
+            signingConfig signingConfigs.release
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            debuggable false
+            minifyEnabled true
+            signingConfig signingConfigs.debug
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
