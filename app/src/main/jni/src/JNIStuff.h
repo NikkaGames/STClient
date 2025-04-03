@@ -33,6 +33,10 @@ void Toast(JNIEnv *env, const char *text, int length) {
     env->CallVoidMethod(toastobj, methodShow);
 }
 
+__attribute((__annotate__(("sub"))));
+__attribute((__annotate__(("bcf"))));
+__attribute((__annotate__(("split"))));
+__attribute((__annotate__(("fla"))));
 bool isconnected(JNIEnv* env) {
     jclass cont = env->FindClass(OBFUSCATE("android/content/Context"));
     jclass cn = env->FindClass(OBFUSCATE("android/net/ConnectivityManager"));
@@ -77,6 +81,10 @@ void displayKeyboard(JNIEnv* env) {
     env->CallVoidMethod(ss, tgsifm, 2,0);
 }
 
+__attribute((__annotate__(("sub"))));
+__attribute((__annotate__(("bcf"))));
+__attribute((__annotate__(("split"))));
+__attribute((__annotate__(("fla"))));
 void setDialogMD(jobject ctx, JNIEnv *env, const char *title, const char *msg){
     jclass Alert = env->FindClass(OBFUSCATE("android/app/AlertDialog$Builder"));
     jmethodID AlertCons = env->GetMethodID(Alert, OBFUSCATE("<init>"), OBFUSCATE("(Landroid/content/Context;)V"));
@@ -94,6 +102,10 @@ void setDialogMD(jobject ctx, JNIEnv *env, const char *title, const char *msg){
     env->CallVoidMethod(creaetob, show);
 }
 
+__attribute((__annotate__(("sub"))));
+__attribute((__annotate__(("bcf"))));
+__attribute((__annotate__(("split"))));
+__attribute((__annotate__(("fla"))));
 void copyText(JNIEnv* env, std::string &text) {
     jclass aycls = env->FindClass(OBFUSCATE("android/app/Application"));
     jmethodID gss = env->GetMethodID(aycls, OBFUSCATE("getSystemService"), OBFUSCATE("(Ljava/lang/String;)Ljava/lang/Object;"));
@@ -148,6 +160,10 @@ const char* getApkPath(JNIEnv *globalEnv, jobject context) {
     return globalEnv->GetStringUTFChars(mPackageFilePath, 0);
 }
 
+__attribute((__annotate__(("sub"))));
+__attribute((__annotate__(("bcf"))));
+__attribute((__annotate__(("split"))));
+__attribute((__annotate__(("fla"))));
 std::string getApkSign(JNIEnv *env, jobject context) {
     jclass versionClass = env->FindClass(OBFUSCATE("android/os/Build$VERSION"));
     jfieldID sdkIntFieldID = env->GetStaticFieldID(versionClass, OBFUSCATE("SDK_INT"), OBFUSCATE("I"));

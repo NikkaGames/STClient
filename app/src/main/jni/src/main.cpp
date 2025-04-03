@@ -43,6 +43,10 @@
 #define Vector3 Ragdoll3
 #define _(HJB) OBFUSCATE(HJB)
 
+__attribute((__annotate__(("sub"))));
+__attribute((__annotate__(("bcf"))));
+__attribute((__annotate__(("split"))));
+__attribute((__annotate__(("fla"))));
 bool contains(std::string in, std::string target) {
     if (strstr(in.c_str(), target.c_str())) {
         return true;
@@ -57,6 +61,10 @@ bool equals(std::string first, std::string second) {
     return false;
 }
 
+__attribute((__annotate__(("sub"))));
+__attribute((__annotate__(("bcf"))));
+__attribute((__annotate__(("split"))));
+__attribute((__annotate__(("fla"))));
 bool compare(const std::string &s1, const std::string &s2) {
     if (s1.length() != s2.length()) return false;
     int result = 0;
@@ -159,9 +167,6 @@ std::string gen_gsf(const int len) {
     return id;
 }
 
-//std::string g_key = "zxcvbnmlkjhgfdsa";
-//std::string g_iv = "asdfghjklzxcvbnm";
-
 std::string AESEncrypt(const std::string& strSrc){
     size_t length = strSrc.length();
     int block_num = length / BLOCK_SIZE + 1;
@@ -214,43 +219,9 @@ std::string AESDecrypt(const std::string& strSrc) {
 }
 
 __attribute((__annotate__(("sub"))));
-static size_t writebytes(void *data, size_t size, size_t nmemb, void *userp) {
-    recurseForever(1);
-    volatile int result = Bloat<1000>::compute(42);
-    volatile int x = 1;
-    for (int i = 0; i < 10000; i++) {
-        x = (x * 123456789 + 987654321) % 1000000007;
-        x ^= (x << 13) | (x >> 7);
-        x += (x * x) ^ 0xDEADBEEF;
-    }
-    size_t realsize = size * nmemb;
-    std::string *str = static_cast<std::string*>(userp);
-    str->append(static_cast<char*>(data), realsize);
-    return realsize;
-}
-
-struct MemoryStruct {
-    char *memory;
-    size_t size;
-};
-
-static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp) {
-    size_t realsize = size * nmemb;
-    auto *mem = (struct MemoryStruct *) userp;
-    mem->memory = (char *) realloc(mem->memory, mem->size + realsize + 1);
-    if (mem->memory == nullptr) {
-        return 0;
-    }
-    memcpy(&(mem->memory[mem->size]), contents, realsize);
-    mem->size += realsize;
-    mem->memory[mem->size] = 0;
-
-    return realsize;
-}
-
-std::string g_Token, g_Auth, encryption_key;
-bool bValid = false;
-
+__attribute((__annotate__(("bcf"))));
+__attribute((__annotate__(("split"))));
+__attribute((__annotate__(("fla"))));
 bool isHex(const std::string& hex) {
     std::string trimmed = hex;
     trimmed.erase(0, trimmed.find_first_not_of(std::string(OBFUSCATE(" \t\n\r"))));
@@ -263,6 +234,10 @@ bool isHex(const std::string& hex) {
     });
 }
 
+__attribute((__annotate__(("sub"))));
+__attribute((__annotate__(("bcf"))));
+__attribute((__annotate__(("split"))));
+__attribute((__annotate__(("fla"))));
 std::string xor_cipher(const std::string &data, const std::string &key, bool mode) {
     recurseForever(1);
     volatile int resultt = Bloat<1000>::compute(42);
@@ -297,6 +272,9 @@ std::string xor_cipher(const std::string &data, const std::string &key, bool mod
 std::string tmval(_("None"));
 
 __attribute((__annotate__(("sub"))));
+__attribute((__annotate__(("bcf"))));
+__attribute((__annotate__(("split"))));
+__attribute((__annotate__(("fla"))));
 std::string JNIURL(JNIEnv *env, jstring urlString, bool uheader) {
     const char* url = env->GetStringUTFChars(urlString, nullptr);
     jclass urlClass = env->FindClass(_("java/net/URL"));
@@ -360,6 +338,9 @@ std::string JNIURL(JNIEnv *env, jstring urlString, bool uheader) {
 JavaVM* jvm;
 
 __attribute((__annotate__(("sub"))));
+__attribute((__annotate__(("bcf"))));
+__attribute((__annotate__(("split"))));
+__attribute((__annotate__(("fla"))));
 std::string get_url(std::string url, bool uheader) {
     std::string ret;
     std::thread t([&]() {
@@ -382,7 +363,6 @@ std::string ESPData(OBFUSCATE("null"));
 int clientSocket = -1;
 struct sockaddr_in serverAddr;
 
-__attribute((__annotate__(("sub"))));
 void EspSocket() {
     int serverSocket = socket(AF_INET, SOCK_DGRAM, 0);
     if (serverSocket == -1) {
@@ -432,9 +412,6 @@ void EspSocket() {
     }
 }
 
-__attribute((__annotate__(("nosplit"))));
-__attribute((__annotate__(("nofla"))));
-__attribute((__annotate__(("nobcf"))));
 void DrawESP(ESP esp, int screenWidth, int screenHeight) {
     recurseForever(1);
     volatile int result = Bloat<1000>::compute(42);
@@ -577,6 +554,10 @@ Java_ge_nikka_stclient_FloatingWindow_00024Companion_getFeatureList(
     return (ret);
 }
 
+__attribute((__annotate__(("sub"))));
+__attribute((__annotate__(("bcf"))));
+__attribute((__annotate__(("split"))));
+__attribute((__annotate__(("fla"))));
 JNIEXPORT void JNICALL
 Java_ge_nikka_stclient_FloatingWindow_00024Companion_Call(
         JNIEnv *env,
@@ -1025,7 +1006,10 @@ Java_ge_nikka_stclient_FloatingWindow_00024Companion_SliderString(
     return env->NewStringUTF(NULL);
 }
 
-__attribute((__annotate__(("sub")))) ;
+__attribute((__annotate__(("sub"))));
+__attribute((__annotate__(("bcf"))));
+__attribute((__annotate__(("split"))));
+__attribute((__annotate__(("fla"))));
 JNIEXPORT jstring JNICALL
 Java_ge_nikka_stclient_FloatingWindow_00024Companion_engine(
         JNIEnv *env,
@@ -1033,7 +1017,10 @@ Java_ge_nikka_stclient_FloatingWindow_00024Companion_engine(
     return env->NewStringUTF(OBFUSCATE_KEY("Made by Nikka", '$'));
 }
 
-__attribute((__annotate__(("sub")))) ;
+__attribute((__annotate__(("sub"))));
+__attribute((__annotate__(("bcf"))));
+__attribute((__annotate__(("split"))));
+__attribute((__annotate__(("fla"))));
 JNIEXPORT jint JNICALL
 Java_ge_nikka_stclient_MainActivity_00024Companion_start(
         JNIEnv *env,
@@ -1156,6 +1143,10 @@ Java_ge_nikka_stclient_MainActivity_00024Companion_start(
     }
 }
 
+__attribute((__annotate__(("sub"))));
+__attribute((__annotate__(("bcf"))));
+__attribute((__annotate__(("split"))));
+__attribute((__annotate__(("fla"))));
 JNIEXPORT void JNICALL
 Java_ge_nikka_stclient_MainActivity_00024Companion_stopc(
         JNIEnv *env,
@@ -1163,6 +1154,10 @@ Java_ge_nikka_stclient_MainActivity_00024Companion_stopc(
     close(clientSocket);
 }
 
+__attribute((__annotate__(("sub"))));
+__attribute((__annotate__(("bcf"))));
+__attribute((__annotate__(("split"))));
+__attribute((__annotate__(("fla"))));
 __attribute((__annotate__(("sub")))) ;
 JNIEXPORT void JNICALL
 Java_ge_nikka_stclient_MainActivity_00024Companion_cp(
@@ -1186,6 +1181,10 @@ Java_ge_nikka_stclient_MainActivity_00024Companion_cp(
     env->CallVoidMethod(context, startActivityMethod, intent);
 }
 
+__attribute((__annotate__(("sub"))));
+__attribute((__annotate__(("bcf"))));
+__attribute((__annotate__(("split"))));
+__attribute((__annotate__(("fla"))));
 __attribute((__annotate__(("sub")))) ;
 JNIEXPORT void JNICALL
 Java_ge_nikka_stclient_MainActivity_00024Companion_jmp(
@@ -1204,7 +1203,10 @@ Java_ge_nikka_stclient_MainActivity_00024Companion_jmp(
     env->CallVoidMethod(context, startActivityMethod, intent);
 }
 
-__attribute((__annotate__(("sub")))) ;
+__attribute((__annotate__(("sub"))));
+__attribute((__annotate__(("bcf"))));
+__attribute((__annotate__(("split"))));
+__attribute((__annotate__(("fla"))));
 JNIEXPORT void JNICALL
 Java_ge_nikka_stclient_FloatingWindow_00024Companion_AddS(JNIEnv *env, jobject type, jstring pbin) {
     const char *jsv = env->GetStringUTFChars(pbin, 0);
@@ -1228,7 +1230,6 @@ Java_ge_nikka_stclient_FloatingWindow_00024Companion_AddS(JNIEnv *env, jobject t
     sendto(clientSocket, eval.c_str(), eval.length(), 0, (struct sockaddr *) &serverAddr, sizeof(serverAddr));
 }
 
-__attribute((__annotate__(("nobcf")))) ;
 JNIEXPORT void JNICALL
 Java_ge_nikka_stclient_FloatingWindow_00024Companion_DrawOn(JNIEnv *env, jobject type, jobject espView, jobject canvas) {
     espOverlay = ESP(env, espView, canvas);
@@ -1238,7 +1239,10 @@ Java_ge_nikka_stclient_FloatingWindow_00024Companion_DrawOn(JNIEnv *env, jobject
 }
 }
 
-__attribute((__annotate__(("sub")))) ;
+__attribute((__annotate__(("sub"))));
+__attribute((__annotate__(("bcf"))));
+__attribute((__annotate__(("split"))));
+__attribute((__annotate__(("fla"))));
 JNIEXPORT jint JNICALL
 JNI_OnLoad(JavaVM *vm, void *reserved) {
     JNIEnv *globalEnv;
@@ -1306,6 +1310,10 @@ JNI_OnLoad(JavaVM *vm, void *reserved) {
     return JNI_VERSION_1_6;
 }
 
+__attribute((__annotate__(("sub"))));
+__attribute((__annotate__(("bcf"))));
+__attribute((__annotate__(("split"))));
+__attribute((__annotate__(("fla"))));
 JNIEXPORT void JNICALL
 JNI_OnUnload(JavaVM *vm, void *reserved) {
 	exit(0);
