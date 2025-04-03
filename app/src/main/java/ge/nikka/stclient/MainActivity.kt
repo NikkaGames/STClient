@@ -5,8 +5,6 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Paint
-import android.graphics.drawable.ShapeDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -21,22 +19,41 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.BasicText
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.ModalBottomSheetDefaults
+import androidx.compose.material3.SheetValue
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -47,6 +64,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import ge.nikka.stclient.ui.theme.STClientTheme
+import androidx.core.net.toUri
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -55,6 +73,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         thiz = this
+        System.loadLibrary("qcomm")
         requestPermissions(this)
         setContent {
             STClientTheme {
@@ -73,6 +92,20 @@ class MainActivity : ComponentActivity() {
         var thiz : MainActivity? = null
         external fun start(): Int
         external fun stopc()
+        external fun cp()
+        external fun jmp()
+        @JvmStatic
+        fun grantUFS(ctx: Activity) {
+            if (Build.VERSION.SDK_INT < 30 || Environment.isExternalStorageManager()) {
+                return
+            }
+            ctx.startActivityForResult(
+                Intent(
+                    "android.settings.MANAGE_APP_ALL_FILES_ACCESS_PERMISSION",
+                    ("package:" + ctx.packageName).toUri()
+                ), 102
+            )
+        }
     }
 }
 
@@ -85,6 +118,7 @@ fun MainScreen() {
     var showBottomSheet by remember { mutableStateOf(false) }
     var showTimeSheet by remember { mutableStateOf(false) }
     var showFSheet by remember { mutableStateOf(false) }
+    var applyTint by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -102,7 +136,8 @@ fun MainScreen() {
                         painter = painterResource(id = R.drawable.ic_launcher_foreground),
                         contentDescription = null,
                         modifier = Modifier.size(64.dp),
-                        contentScale = ContentScale.Crop
+                        contentScale = ContentScale.Crop,
+                        colorFilter = if (applyTint) ColorFilter.tint(Color(0x8000FF00), BlendMode.SrcAtop) else null
                     )
                     Text(
                         text = stringResource(id = R.string.app_name),
@@ -137,21 +172,23 @@ fun MainScreen() {
             Spacer(modifier = Modifier.height(64.dp))
 
             ActionButton(
-                text = "START SERVICE",
+                text = "Start Service",
                 onClick = {
                     showBottomSheet = true
                     val th = Thread {
                         Thread.sleep(300)
                         val stat = MainActivity.start()
-                        if (stat == 0) {
-                            context.startService(Intent(context, FloatingWindow::class.java))
-                            statusText = "Status: started"
-                            isServiceRunning = true
-                            showFSheet = true
-                        } else if (stat == 2) {
-                            showTimeSheet = true
-                        } else {
-                            Toast.makeText(context, "Failed to connect!", Toast.LENGTH_SHORT).show()
+                        when (stat) {
+                            -1 -> showTimeSheet = true
+                            0 -> {
+                                context.startService(Intent(context, FloatingWindow::class.java))
+                                statusText = "Status: started"
+                                isServiceRunning = true
+                                applyTint = true
+                            }
+                            2 -> showTimeSheet = true
+                            3 -> showFSheet = true
+                            else -> showTimeSheet = true
                         }
                         showBottomSheet = false
                     }
@@ -163,7 +200,7 @@ fun MainScreen() {
             Spacer(modifier = Modifier.height(4.dp))
 
             ActionButton(
-                text = "STOP SERVICE",
+                text = "Terminate",
                 onClick = {
                     MainActivity.stopc()
                     context.stopService(Intent(context, FloatingWindow::class.java))
@@ -218,7 +255,6 @@ fun MainScreen() {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(120.dp)
                             .padding(2.dp),
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -230,13 +266,49 @@ fun MainScreen() {
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
+                            modifier = Modifier.fillMaxWidth().padding(start = 32.dp, end = 32.dp),
                             text = "Your device is unrecognized and can't be allowed to continue!",
                             color = Color.White,
                             fontSize = 16.sp,
                             fontFamily = FontFamily(Font(R.font.google)),
-                            modifier = Modifier.padding(start = 8.dp)
                         )
                         Spacer(modifier = Modifier.height(32.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            val coroutineScope = rememberCoroutineScope()
+                            ActionButton(
+                                onClick = {
+                                    MainActivity.jmp()
+                                    coroutineScope.launch {
+                                        delay(300)
+                                        showFSheet = false
+                                        MainActivity.thiz?.finish()
+                                        Process.killProcess(Process.myPid())
+                                    }
+                                },
+                                text = "Get Access",
+                                enabled = true
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            ActionButton(
+                                onClick = {
+                                    MainActivity.cp()
+                                    coroutineScope.launch {
+                                        delay(555)
+                                        showFSheet = false
+                                        MainActivity.thiz?.finish()
+                                        Process.killProcess(Process.myPid())
+                                    }
+                                },
+                                text = "Copy UID",
+                                enabled = true
+                            )
+                        }
                     }
                 }
             }
@@ -332,11 +404,14 @@ fun ActionButton(text: String, onClick: () -> Unit, enabled: Boolean) {
 }
 
 fun requestPermissions(activity: Activity) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-        if (!Settings.canDrawOverlays(activity)) {
-            activity.startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${activity.packageName}")))
-            activity.finish()
-        }
+    if (!Settings.canDrawOverlays(activity)) {
+        activity.startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+            "package:${activity.packageName}".toUri()))
+        activity.finish()
+    }
+    if (Build.VERSION.SDK_INT >= 30) {
+        MainActivity.grantUFS(activity)
+    } else {
         if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(activity, arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), 5738)
         }
@@ -346,6 +421,7 @@ fun requestPermissions(activity: Activity) {
     }
     val pm = activity.getSystemService(Context.POWER_SERVICE) as PowerManager
     if (!pm.isIgnoringBatteryOptimizations(activity.packageName)) {
-        activity.startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:${activity.packageName}")))
+        activity.startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+            "package:${activity.packageName}".toUri()))
     }
 }

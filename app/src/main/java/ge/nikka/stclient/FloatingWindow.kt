@@ -375,6 +375,8 @@ class FloatingWindow : Service() {
         startimage!!.setOnTouchListener(onTouchListener())
         initMenuButton(relativeLayout2, linearLayout)
         CreateMenuList()
+        startimage?.animation = fadeout()
+        startimage?.animate()
     }
 
     private fun onTouchListener(): OnTouchListener {

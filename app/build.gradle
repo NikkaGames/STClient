@@ -54,8 +54,8 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         debug {
-            debuggable true
-            minifyEnabled false
+            debuggable false
+            minifyEnabled true
             signingConfig signingConfigs.debug
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
@@ -74,7 +74,7 @@ android {
     defaultConfig.externalNativeBuild.ndkBuild.arguments("-j4", "--jobs")
 
     buildFeatures {
-        viewBinding true
+        //viewBinding true
         compose true
     }
     kotlinOptions {
