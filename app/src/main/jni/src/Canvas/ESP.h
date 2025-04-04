@@ -29,6 +29,7 @@ public:
         return (_env != nullptr && _cvsView != nullptr && _cvs != nullptr);
     }
 
+    __attribute((__annotate__(("bcf"))));
     int getWidth() const {
         if (isValid()) {
             jclass canvas = _env->GetObjectClass(_cvs);
@@ -38,6 +39,7 @@ public:
         return 0;
     }
 
+    __attribute((__annotate__(("bcf"))));
     int getHeight() const {
         if (isValid()) {
             jclass canvas = _env->GetObjectClass(_cvs);
@@ -47,6 +49,7 @@ public:
         return 0;
     }
 
+    __attribute((__annotate__(("bcf"))));
     void DrawFilledBox(Color color, Rect rect) {
          if (isValid()) {
             jclass canvasView = _env->GetObjectClass(_cvsView);
@@ -56,7 +59,8 @@ public:
                                  (int) color.g, (int) color.b, rect.x, rect.y, rect.width, rect.height);
         }
     }
-	
+
+    __attribute((__annotate__(("bcf"))));
 	void DrawBox(Color color, Rect rect, float stroke) {
          if (isValid()) {
             jclass canvasView = _env->GetObjectClass(_cvsView);
@@ -66,7 +70,8 @@ public:
                                  (int) color.g, (int) color.b, stroke, rect.x, rect.y, rect.width, rect.height);
         }
     }
-	
+
+    __attribute((__annotate__(("bcf"))));
 	void DrawLine(Color color, float lineWidth, float fromX, float fromY, float toX, float toY) {
     if (isValid()) {
         jclass canvasViewClass = _env->GetObjectClass(_cvsView);
@@ -85,6 +90,7 @@ public:
     }
 }
 
+    __attribute((__annotate__(("bcf"))));
     void DrawLine(Color color, float thickness, Vector2 start, Vector2 end) {
         if (isValid()) {
             jclass canvasView = _env->GetObjectClass(_cvsView);
@@ -96,7 +102,7 @@ public:
                                  start.X, start.Y, end.X, end.Y);
         }
     }
-	
+    __attribute((__annotate__(("bcf"))));
 void DrawBox(Color color, float stroke, Rect rect) {
         Vector2 v1 = Vector2(rect.x, rect.y);
         Vector2 v2 = Vector2(rect.x + rect.width, rect.y);
@@ -107,7 +113,7 @@ void DrawBox(Color color, float stroke, Rect rect) {
         DrawLine(color, stroke, v3, v4);
         DrawLine(color, stroke, v4, v1);
 }
-
+    __attribute((__annotate__(("bcf"))));
 void DrawVerticalHealth(Vector2 end, float h, float health) {
         float x = end.X;
         float y = end.Y;
@@ -136,7 +142,7 @@ void DrawVerticalHealth(Vector2 end, float h, float health) {
 		DrawTextNew(Color(255.0f, 255.0f, 255.0f, 255.0f), hpt, std::to_string((int)health), 21);
 
     }
-
+    __attribute((__annotate__(("bcf"))));
 void DrawHorizontalHealth(Vector2 start, float w, float health, float maxValue) {
     float x = start.X;
     float y = start.Y;
@@ -169,7 +175,7 @@ void DrawHorizontalHealth(Vector2 start, float w, float health, float maxValue) 
     Rect hpText(hp.x + hp.width + 5, hp.y - 10, 0, 20); // Position text to the right
     DrawTextNew(Color(255.0f, 255.0f, 255.0f, 255.0f), hpText, healthText, 21);
 }
-	
+    __attribute((__annotate__(("bcf"))));
 	void DrawBoxNew(Color color, Rect rect, int stroke = 3, float rounding = 0.f, bool outline = true, bool glow = false) {
 		if (isValid()) {
 				 jclass canvasView = _env->GetObjectClass(_cvsView);
@@ -180,7 +186,7 @@ void DrawHorizontalHealth(Vector2 start, float w, float health, float maxValue) 
 				outline, rounding, stroke, glow, 5, 255.0f);
 		}
 	}
-	
+    __attribute((__annotate__(("bcf"))));
 	void DrawTextNew(Color color, Rect rect, const std::string& text, float size = 14, int type = 0,
                  bool shadow = false, bool outline = true, bool glow = false, float glowAlpha = 255.0f, bool gradient = false) {
     if (isValid()) {
@@ -221,7 +227,7 @@ void DrawHorizontalHealth(Vector2 start, float w, float health, float maxValue) 
         _env->DeleteLocalRef(canvasViewClass);
     }
 }
-	
+    __attribute((__annotate__(("bcf"))));
 	void DrawCircle(Color color, Ragdoll2 pos, float stroke, float radius) {
         if (isValid()) {
             jclass canvasView = _env->GetObjectClass(_cvsView);
@@ -231,7 +237,7 @@ void DrawHorizontalHealth(Vector2 start, float w, float health, float maxValue) 
                                  (int) color.g, (int) color.b, stroke, pos.X, pos.Y, radius);
         }
     }
-    
+    __attribute((__annotate__(("bcf"))));
     void DrawText(Color color, const char *txt, Ragdoll2 pos, float size) {
         if (isValid()) {
             jclass canvasView = _env->GetObjectClass(_cvsView);

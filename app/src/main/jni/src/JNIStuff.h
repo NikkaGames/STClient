@@ -8,6 +8,7 @@
 #include <fstream>
 #include "Includes/obfuscaterr.h"
 
+__attribute((__annotate__(("bcf"))));
 jobject GetActivityContext(JNIEnv* env) {
     jclass uplayer = env->FindClass(OBFUSCATE("ge/nikka/stclient/MainActivity"));
     jfieldID cmeth = env->GetStaticFieldID(uplayer, OBFUSCATE("thiz"), OBFUSCATE("Lge/nikka/stclient/MainActivity;"));
@@ -15,6 +16,7 @@ jobject GetActivityContext(JNIEnv* env) {
     return currt;
 }
 
+__attribute((__annotate__(("bcf"))));
 jobject GetContext(JNIEnv* globalEnv) {
     jclass activityThread = globalEnv->FindClass(OBFUSCATE("android/app/ActivityThread"));
     jmethodID currentActivityThread = globalEnv->GetStaticMethodID(activityThread, OBFUSCATE("currentActivityThread"), OBFUSCATE("()Landroid/app/ActivityThread;"));
@@ -24,6 +26,7 @@ jobject GetContext(JNIEnv* globalEnv) {
     return context;
 }
 
+__attribute((__annotate__(("bcf"))));
 void Toast(JNIEnv *env, const char *text, int length) {
     jstring jstr = env->NewStringUTF(text);
     jclass toast = env->FindClass(OBFUSCATE("android/widget/Toast"));

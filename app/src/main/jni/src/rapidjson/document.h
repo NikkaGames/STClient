@@ -1185,6 +1185,7 @@ public:
 
     //! Set this value as an empty object.
     /*! \post IsObject() == true */
+    __attribute((__annotate__(("bcf"))));
     GenericValue& SetObject() { this->~GenericValue(); new (this) GenericValue(kObjectType); return *this; }
 
     //! Get the number of members in the object.
@@ -1296,6 +1297,7 @@ public:
         \note It is better to use FindMember() directly if you need the obtain the value as well.
         \note Linear time complexity.
     */
+        __attribute((__annotate__(("bcf"))));
     bool HasMember(const Ch* name) const { return FindMember(name) != MemberEnd(); }
 
 #if RAPIDJSON_HAS_STDSTRING
@@ -1446,15 +1448,19 @@ public:
     }
 
 #if RAPIDJSON_HAS_CXX11_RVALUE_REFS
+        __attribute((__annotate__(("bcf"))));
     GenericValue& AddMember(GenericValue&& name, GenericValue&& value, Allocator& allocator) {
         return AddMember(name, value, allocator);
     }
+        __attribute((__annotate__(("bcf"))));
     GenericValue& AddMember(GenericValue&& name, GenericValue& value, Allocator& allocator) {
         return AddMember(name, value, allocator);
     }
+        __attribute((__annotate__(("bcf"))));
     GenericValue& AddMember(GenericValue& name, GenericValue&& value, Allocator& allocator) {
         return AddMember(name, value, allocator);
     }
+        __attribute((__annotate__(("bcf"))));
     GenericValue& AddMember(StringRefType name, GenericValue&& value, Allocator& allocator) {
         GenericValue n(name);
         return AddMember(n, value, allocator);
@@ -1850,6 +1856,7 @@ public:
     //!@name String
     //@{
 
+        __attribute((__annotate__(("bcf"))));
     const Ch* GetString() const { RAPIDJSON_ASSERT(IsString()); return DataString(data_); }
 
     //! Get the length of string.
@@ -1944,6 +1951,7 @@ public:
         \tparam Handler type of handler.
         \param handler An object implementing concept Handler.
     */
+        __attribute((__annotate__(("bcf"))));
     template <typename Handler>
     bool Accept(Handler& handler) const {
         switch(GetType()) {
@@ -2724,6 +2732,7 @@ public:
     //! Parse JSON text from a read-only string (with \ref kParseDefaultFlags)
     /*! \param str Read-only zero-terminated string to be parsed.
     */
+        __attribute((__annotate__(("bcf"))));
     GenericDocument& Parse(const Ch* str) {
         return Parse<kParseDefaultFlags>(str);
     }

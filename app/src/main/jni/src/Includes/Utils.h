@@ -16,6 +16,7 @@ DWORD getAbsoluteAddress(const char *libraryName, DWORD relativeAddr);
 
 bool isLibraryLoaded(const char *libraryName);
 
+__attribute((__annotate__(("bcf"))));
 DWORD findLibrary(const char *library) {
     char filename[0xFF] = {0},
             buffer[1024] = {0};
@@ -53,6 +54,7 @@ DWORD getAbsoluteAddress(const char *libraryName, DWORD relativeAddr) {
     return (reinterpret_cast<DWORD>(libBase + relativeAddr));
 }
 
+__attribute((__annotate__(("bcf"))));
 bool isLibraryLoaded(const char *libraryName) {
     char line[512] = {0};
     FILE *fp = fopen("/proc/self/maps", "rt");
