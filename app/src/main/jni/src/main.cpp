@@ -1021,6 +1021,17 @@ __attribute((__annotate__(("sub"))));
 __attribute((__annotate__(("bcf"))));
 __attribute((__annotate__(("split"))));
 __attribute((__annotate__(("fla"))));
+JNIEXPORT jstring JNICALL
+Java_ge_nikka_stclient_FloatingWindow_00024Companion_manf(
+        JNIEnv *env,
+        jobject clazz) {
+    return env->NewStringUTF(OBFUSCATE_KEY("Version: 0.33.1", '&'));
+}
+
+__attribute((__annotate__(("sub"))));
+__attribute((__annotate__(("bcf"))));
+__attribute((__annotate__(("split"))));
+__attribute((__annotate__(("fla"))));
 JNIEXPORT jint JNICALL
 Java_ge_nikka_stclient_MainActivity_00024Companion_start(
         JNIEnv *env,

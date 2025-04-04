@@ -290,7 +290,7 @@ class FloatingWindow : Service() {
         layoutParams.gravity = 17
 
         val textvieww = TextView(this)
-        textvieww.text = "Version: 0.33.0"
+        textvieww.text = manf()
         textvieww.textSize = 15.0f
         textvieww.setTextColor(Color.WHITE)
         textvieww.setTypeface(google())
@@ -1370,6 +1370,8 @@ class FloatingWindow : Service() {
         external fun AddS(url: String)
 
         external fun engine(): String?
+
+        external fun manf(): String?
 
         external fun SliderString(feature: Int, value: Int): String?
 
