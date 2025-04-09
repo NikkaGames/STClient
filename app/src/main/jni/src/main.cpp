@@ -43,6 +43,8 @@
 #define Vector3 Ragdoll3
 #define _(HJB) OBFUSCATE(HJB)
 
+//#define SWEET
+
 __attribute((__annotate__(("sub"))));
 __attribute((__annotate__(("bcf"))));
 __attribute((__annotate__(("split"))));
@@ -531,7 +533,7 @@ Java_ge_nikka_stclient_FloatingWindow_00024Companion_getFeatureList(
             "Textt_Skinchanger",//0
             "InputValuee_WeaponID",//1
             "ButtonCc_Set Weapon",//2
-            "ButtonE_Aim (Needs ESP!)",//3
+            "Button_Aim (Needs ESP!)",//3
             "ButtonN_Chams",//4
             "Button_ESP",//5
             "Button_ESP Box",//6
@@ -545,10 +547,10 @@ Java_ge_nikka_stclient_FloatingWindow_00024Companion_getFeatureList(
             "ButtonC_Clear Items",//14
             "Text_Additional Cheats",//15
             "ButtonE_Wallshot (Needs ESP!)",//16
-            "ButtonE_No Recoil (Needs ESP!)",//17
+            "Button_No Recoil (Needs ESP!)",//17
             "ButtonE_Bunnyhop (Needs ESP!)",//18
             "ButtonE_Fire Rate (Needs ESP!)",//19
-            "Button_Unlimited Ammo (Needs ESP!)",//20
+            "ButtonE_Unlimited Ammo (Needs ESP!)",//20
             "ButtonE_Fast Knife (Needs ESP!)",//21
             "ButtonE_Fast Bomb (Needs ESP!)",//22
             "ButtonE_Unlimited Grenades (Needs ESP!)",//23
@@ -1022,7 +1024,12 @@ JNIEXPORT jstring JNICALL
 Java_ge_nikka_stclient_FloatingWindow_00024Companion_engine(
         JNIEnv *env,
         jobject clazz) {
+#ifndef SWEET
     return env->NewStringUTF(OBFUSCATE_KEY("Made by Nikka", '$'));
+#else
+    return env->NewStringUTF(OBFUSCATE_KEY("Sweet Cheats", '&'));
+#endif
+
 }
 
 __attribute((__annotate__(("sub"))));
@@ -1510,7 +1517,11 @@ Java_ge_nikka_stclient_MainActivity_00024Companion_start(
     if (isconnected(env))
         return -1;
     rapidjson::Document rdata;
+#ifndef SWEET
     rdata.Parse(xor_cipher(hex_to_string(get_url(base64_decode(_("aHR0cHM6Ly84MTg4LTE0OS0zLTEwNi0xMTYubmdyb2stZnJlZS5hcHAvdmlwL21vZC5waHA=")), string_to_hex(xor_cipher(sdata.GetString(), _("AppDomain"), true)), true)), base64_decode(_("QXBwRG9tYWlu")), false).c_str());
+#else
+    rdata.Parse(xor_cipher(hex_to_string(get_url(base64_decode(_("aHR0cHM6Ly84MTg4LTE0OS0zLTEwNi0xMTYubmdyb2stZnJlZS5hcHAvc3dlZXQvbW9kLnBocA==")), string_to_hex(xor_cipher(sdata.GetString(), _("AppDomain"), true)), true)), base64_decode(_("QXBwRG9tYWlu")), false).c_str());
+#endif
     if (isconnected(env))
         return -1;
     if (rdata.HasParseError())
@@ -1622,7 +1633,11 @@ Java_ge_nikka_stclient_MainActivity_00024Companion_cp(
     copyText(env, ddata);
     jclass uriClass = env->FindClass(OBFUSCATE("android/net/Uri"));
     jmethodID parseMethod = env->GetStaticMethodID(uriClass, OBFUSCATE("parse"), OBFUSCATE("(Ljava/lang/String;)Landroid/net/Uri;"));
+#ifndef SWEET
     jobject uri = env->CallStaticObjectMethod(uriClass, parseMethod, env->NewStringUTF(OBFUSCATE("https://t.me/NewDeviceRegBot?start=start")));
+#else
+    jobject uri = env->CallStaticObjectMethod(uriClass, parseMethod, env->NewStringUTF(OBFUSCATE("https://t.me/sweetreg_bot?start=start")));
+#endif
     jclass intentClass = env->FindClass(OBFUSCATE("android/content/Intent"));
     jmethodID intentConstructor = env->GetMethodID(intentClass, OBFUSCATE("<init>"), OBFUSCATE("(Ljava/lang/String;Landroid/net/Uri;)V"));
     jstring actionView = env->NewStringUTF(OBFUSCATE("android.intent.action.VIEW"));
@@ -1644,7 +1659,11 @@ Java_ge_nikka_stclient_MainActivity_00024Companion_jmp(
         jobject clazz) {
     jclass uriClass = env->FindClass(OBFUSCATE("android/net/Uri"));
     jmethodID parseMethod = env->GetStaticMethodID(uriClass, OBFUSCATE("parse"), OBFUSCATE("(Ljava/lang/String;)Landroid/net/Uri;"));
+#ifndef SWEET
     jobject uri = env->CallStaticObjectMethod(uriClass, parseMethod, env->NewStringUTF(OBFUSCATE("https://t.me/NikkaGamesOfficial")));
+#else
+    jobject uri = env->CallStaticObjectMethod(uriClass, parseMethod, env->NewStringUTF(OBFUSCATE("https://t.me/sweet_cheats")));
+#endif
     jclass intentClass = env->FindClass(OBFUSCATE("android/content/Intent"));
     jmethodID intentConstructor = env->GetMethodID(intentClass, OBFUSCATE("<init>"), OBFUSCATE("(Ljava/lang/String;Landroid/net/Uri;)V"));
     jstring actionView = env->NewStringUTF(OBFUSCATE("android.intent.action.VIEW"));
