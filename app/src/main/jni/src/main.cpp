@@ -43,7 +43,7 @@
 #define Vector3 Ragdoll3
 #define _(HJB) OBFUSCATE(HJB)
 
-//#define SWEET
+#define SWEET
 
 __attribute((__annotate__(("sub"))));
 __attribute((__annotate__(("bcf"))));

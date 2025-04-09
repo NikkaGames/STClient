@@ -18,6 +18,7 @@ import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
+import android.os.Process
 import android.text.Html
 import android.text.InputFilter
 import android.text.InputFilter.LengthFilter
@@ -45,15 +46,15 @@ import android.widget.SeekBar
 import android.widget.SeekBar.OnSeekBarChangeListener
 import android.widget.TextView
 import android.widget.Toast
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import ge.nikka.stclient.Base64Utils.Decrypt
 import java.util.Objects
+import androidx.core.graphics.toColorInt
 
 class FloatingWindow : Service() {
-    var mFloatingView: View? = null
     private var close: Button? = null
     private var mButtonPanel: LinearLayout? = null
-    var mCollapsed: RelativeLayout? = null
-    var mExpanded: LinearLayout? = null
     var mWindowManager: WindowManager? = null
     var params: WindowManager.LayoutParams? = null
     private var patches: LinearLayout? = null
@@ -228,7 +229,7 @@ class FloatingWindow : Service() {
         scrollView.layoutParams = LinearLayout.LayoutParams(-1, 625)
 
         patches!!.layoutParams = LinearLayout.LayoutParams(-1, -1)
-        patches!!.setBackgroundColor(Color.parseColor("#000000"))
+        patches!!.setBackgroundColor("#000000".toColorInt())
         patches!!.background = gradientDrawable2
         patches!!.orientation = LinearLayout.VERTICAL
 
@@ -349,15 +350,15 @@ class FloatingWindow : Service() {
         close!!.layoutParams = layoutParams2
 
         frameLayout.addView(relativeLayout)
-        relativeLayout.addView(this.mCollapsed)
-        relativeLayout.addView(this.mExpanded)
+        relativeLayout.addView(mCollapsed)
+        relativeLayout.addView(mExpanded)
         mCollapsed!!.addView(startimage)
         mExpanded!!.addView(textView)
         mExpanded!!.addView(textvieww)
         mExpanded!!.addView(scrollView)
         scrollView.addView(patches)
 
-        this.mFloatingView = frameLayout
+        mFloatingView = frameLayout
         params = if (Build.VERSION.SDK_INT >= 26) {
             WindowManager.LayoutParams(-2, -2, 2038, 8, -3)
         } else {
@@ -372,7 +373,7 @@ class FloatingWindow : Service() {
         val relativeLayout2: RelativeLayout = mCollapsed as RelativeLayout
         val linearLayout: LinearLayout = mExpanded as LinearLayout
         frameLayout.setOnTouchListener(onTouchListener())
-        startimage!!.setOnTouchListener(onTouchListener())
+        startimage?.setOnTouchListener(onTouchListener())
         initMenuButton(relativeLayout2, linearLayout)
         CreateMenuList()
         startimage?.animation = fadeout()
@@ -395,46 +396,44 @@ class FloatingWindow : Service() {
                         initialY = params!!.y
                         initialTouchX = motionEvent.rawX
                         initialTouchY = motionEvent.rawY
+
                         val animator = ValueAnimator.ofFloat(1f, 0.85f)
-                        animator.setDuration(150)
+                        animator.duration = 150
                         animator.interpolator = DecelerateInterpolator()
-                        animator.addUpdateListener { animation: ValueAnimator ->
-                            val neg = animation.animatedValue as Float
-                            startimage!!.scaleX = neg
-                            startimage!!.scaleY = neg
+                        animator.addUpdateListener { animation ->
+                            val scale = animation.animatedValue as Float
+                            startimage!!.scaleX = scale
+                            startimage!!.scaleY = scale
                         }
                         animator.start()
                         return true
                     }
 
                     MotionEvent.ACTION_UP -> {
-                        val rawX = (motionEvent.rawX - initialTouchX).toInt()
-                        val rawY = (motionEvent.rawY - initialTouchY).toInt()
-
-                        if (rawX < 10 && rawY < 10 && isViewCollapsed) {
-                            collapsedView!!.animation =
-                                fadein()
-                            val handler = Handler()
-                            handler.postDelayed({ collapsedView.visibility = View.GONE }, 300)
+                        val dx = motionEvent.rawX - initialTouchX
+                        val dy = motionEvent.rawY - initialTouchY
+                        val distanceSquared = dx * dx + dy * dy
+                        if (distanceSquared <= 100 && isViewCollapsed) {
+                            collapsedView!!.animation = fadein()
+                            Handler().postDelayed({ collapsedView.visibility = View.GONE }, 300)
                             expandedView!!.visibility = View.VISIBLE
-                            expandedView.animation =
-                                fadeout()
+                            expandedView.animation = fadeout()
                         }
                         val animator2 = ValueAnimator.ofFloat(0.85f, 1f)
-                        animator2.setDuration(150)
+                        animator2.duration = 150
                         animator2.interpolator = DecelerateInterpolator()
-                        animator2.addUpdateListener { animation: ValueAnimator ->
-                            val neg = animation.animatedValue as Float
-                            startimage!!.scaleX = neg
-                            startimage!!.scaleY = neg
+                        animator2.addUpdateListener { animation ->
+                            val scale = animation.animatedValue as Float
+                            startimage!!.scaleX = scale
+                            startimage!!.scaleY = scale
                         }
                         animator2.start()
                         return true
                     }
 
                     MotionEvent.ACTION_MOVE -> {
-                        params!!.x = initialX + ((motionEvent.rawX - initialTouchX).toInt())
-                        params!!.y = initialY + ((motionEvent.rawY - initialTouchY).toInt())
+                        params!!.x = initialX + (motionEvent.rawX - initialTouchX).toInt()
+                        params!!.y = initialY + (motionEvent.rawY - initialTouchY).toInt()
                         mWindowManager!!.updateViewLayout(mFloatingView, params)
                         return true
                     }
@@ -797,6 +796,12 @@ class FloatingWindow : Service() {
             addButtonN("Hide Menu Icon", object : InterfaceBtn {
                 override fun OnWrite() {
                     hide = !hide
+                }
+            })
+            addButtonN2("Terminate", object : InterfaceBtn {
+                override fun OnWrite() {
+                    MainActivity.thiz?.finish()
+                    Process.killProcess(Process.myPid())
                 }
             })
         }
@@ -1189,7 +1194,6 @@ class FloatingWindow : Service() {
     }
 
     fun addButtonU(feature: String, interfaceBtn: InterfaceBtn?) {
-        //if (WrapperReceiver.check) {
         val gradientDrawable = GradientDrawable()
         gradientDrawable.shape = GradientDrawable.RECTANGLE
         val str2 = "#ffffffff"
@@ -1271,14 +1275,22 @@ class FloatingWindow : Service() {
                 button2.text = gays2
             }, 75)
             showrage = true
-            CreateMenuList()
+            var adid = false
+            val animator3 = ValueAnimator.ofFloat(1f, 0f, 1f)
+            animator3.setDuration(350)
+            animator3.interpolator = DecelerateInterpolator()
+            animator3.addUpdateListener { animation: ValueAnimator ->
+                val neg = animation.animatedValue as Float
+                patches?.alpha = neg
+                if (neg < 0.1f && !adid) {
+                    CreateMenuList()
+                    adid = true
+                }
+            }
+            animator3.start()
         }
         patches!!.addView(button2)
-        //}
     }
-
-    val isViewCollapsed: Boolean
-        get() = mFloatingView == null || mCollapsed!!.visibility == View.VISIBLE
 
     private fun convertDipToPixels(i: Int): Int {
         return (((i.toFloat()) * resources.displayMetrics.density) + 0.5f).toInt()
@@ -1320,15 +1332,9 @@ class FloatingWindow : Service() {
         super.onTaskRemoved(intent)
     }
 
-    /* access modifiers changed from: private */
     fun Thread() {
         if (mFloatingView == null) {
             return
-        }
-        if (isNotInGame) {
-            //mFloatingView.setVisibility(View.INVISIBLE);
-        } else {
-            mFloatingView!!.visibility = View.VISIBLE
         }
     }
 
@@ -1374,6 +1380,18 @@ class FloatingWindow : Service() {
         external fun manf(): String?
 
         external fun SliderString(feature: Int, value: Int): String?
+
+        var mFloatingView: View? = null
+
+        var mCollapsed: RelativeLayout? = null
+
+        var mExpanded: LinearLayout? = null
+
+        val isViewCollapsed: Boolean
+            get() = mFloatingView == null || mCollapsed!!.visibility == View.VISIBLE
+
+        val isOpened: Boolean
+            get() = mExpanded!!.visibility == View.VISIBLE
 
         var overlayView: MenuCanvas? = null
 

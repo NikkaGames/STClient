@@ -20,7 +20,7 @@ fun STClientTheme(content: @Composable () -> Unit) {
             onSurface = Color.White  // White text/icons on surface
         ),
         typography = MaterialTheme.typography.copy(
-            bodyLarge = TextStyle(fontSize = 18.sp)  // Adjust text size
+            bodyLarge = TextStyle(fontSize = 18.sp)
         ),
         content = content
     )

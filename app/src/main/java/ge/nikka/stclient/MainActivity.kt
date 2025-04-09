@@ -1,22 +1,35 @@
 package ge.nikka.stclient
 
 import android.Manifest
+import android.annotation.TargetApi
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.drawable.BitmapDrawable
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.os.PowerManager
 import android.os.Process
 import android.provider.Settings
+import android.renderscript.Allocation
+import android.renderscript.Element
+import android.renderscript.RenderScript
+import android.renderscript.ScriptIntrinsicBlur
+import android.util.Log
+import android.view.View
+import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -44,6 +57,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,10 +65,15 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.RenderEffect
+import androidx.compose.ui.graphics.Shader
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -64,17 +83,24 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.ActivityCompat
 import ge.nikka.stclient.ui.theme.STClientTheme
 import androidx.core.net.toUri
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import eightbitlab.com.blurview.BlurView
+import eightbitlab.com.blurview.RenderScriptBlur
+import ge.nikka.stclient.MainActivity.Companion.thiz
+import jp.wasabeef.blurry.Blurry
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         thiz = this
-        MenuCanvas.display = this.display
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            MenuCanvas.display = this.display
+        }
         System.loadLibrary("qcomm")
         requestPermissions(this)
         setContent {
@@ -115,17 +141,29 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainScreen() {
     val context = LocalContext.current
+    val activity = context as? ComponentActivity
     var statusText by remember { mutableStateOf("Status: idle") }
     var isServiceRunning by remember { mutableStateOf(false) }
     var showBottomSheet by remember { mutableStateOf(false) }
     var showTimeSheet by remember { mutableStateOf(false) }
     var showFSheet by remember { mutableStateOf(false) }
     var applyTint by remember { mutableStateOf(false) }
+    val blurRad = remember { Animatable(0f) }
+    val serviceIntent = Intent(context, FloatingWindow::class.java);
+
+    LaunchedEffect(showFSheet || showBottomSheet || showTimeSheet) {
+        val targetBlur = if (showFSheet || showBottomSheet || showTimeSheet) 10f else 0f
+        blurRad.animateTo(
+            targetValue = targetBlur,
+            animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing)
+        )
+    }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
+            .blur(blurRad.value.dp)
     ) {
         TopAppBar(
             title = {
@@ -183,7 +221,7 @@ fun MainScreen() {
                         when (stat) {
                             -1 -> showTimeSheet = true
                             0 -> {
-                                context.startService(Intent(context, FloatingWindow::class.java))
+                                context.startService(serviceIntent)
                                 statusText = "Status: started"
                                 isServiceRunning = true
                                 applyTint = true
@@ -205,10 +243,10 @@ fun MainScreen() {
                 text = "Terminate",
                 onClick = {
                     MainActivity.stopc()
-                    context.stopService(Intent(context, FloatingWindow::class.java))
+                    context.stopService(serviceIntent)
                     isServiceRunning = false
                     statusText = "Status: disconnected"
-                    MainActivity.thiz?.finish()
+                    thiz?.finish()
                     Process.killProcess(Process.myPid())
                 },
                 enabled = isServiceRunning
@@ -218,10 +256,10 @@ fun MainScreen() {
                 ModalBottomSheet(
                     onDismissRequest = {
                         showTimeSheet = false
-                        MainActivity.thiz?.finish()
+                        thiz?.finish()
                         Process.killProcess(Process.myPid())
                     },
-                    containerColor = Color(0xFF090909),
+                    containerColor = Color(0xFF191919),
                     contentColor = Color.White
                 ) {
                     Column(
@@ -248,10 +286,10 @@ fun MainScreen() {
                 ModalBottomSheet(
                     onDismissRequest = {
                         showFSheet = false
-                        MainActivity.thiz?.finish()
+                        thiz?.finish()
                         Process.killProcess(Process.myPid())
                     },
-                    containerColor = Color(0xFF090909),
+                    containerColor = Color(0xFF191919),
                     contentColor = Color.White
                 ) {
                     Column(
@@ -325,9 +363,9 @@ fun MainScreen() {
                 ModalBottomSheet(
                     onDismissRequest = {},
                     sheetState = bottomSheetState,
-                    containerColor = Color(0xFF090909),
+                    containerColor = Color(0xFF191919),
                     contentColor = Color.White,
-                    scrimColor = Color.Black.copy(alpha = 0.8f),
+                    //scrimColor = Color.Black.copy(alpha = 0.0f),
                     properties = ModalBottomSheetDefaults.properties(
                         shouldDismissOnBackPress = false
                     ),
@@ -336,7 +374,7 @@ fun MainScreen() {
                             modifier = Modifier
                                 .width(0.dp)
                                 .height(0.dp)
-                                .background(Color.Black)
+                                .background(Color.Transparent)
                         )
                     }
                 ) {

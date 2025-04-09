@@ -1,6 +1,8 @@
 package ge.nikka.stclient
 
+import android.animation.ValueAnimator
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.BlurMaskFilter
 import android.graphics.Canvas
 import android.graphics.Color
@@ -12,8 +14,12 @@ import android.os.Process
 import android.util.Log
 import android.view.Display
 import android.view.View
-import java.text.SimpleDateFormat
-import java.util.Locale
+import android.view.animation.AlphaAnimation
+import android.view.animation.Animation
+import android.view.animation.DecelerateInterpolator
+import androidx.compose.animation.core.Animatable
+import androidx.core.view.isVisible
+import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
@@ -22,35 +28,44 @@ class MenuCanvas(var ctx: Context) : View(ctx), Runnable {
     var mFilledPaint: Paint? = null
     var mTextPaint: Paint? = null
     var mThread: Thread
-    var FPS: Int = 60
+    var FPS: Int = 59
     var sleepTime: Long
+    private var previousOpenedState = false
 
-    // Date time;
-    var timeForm: SimpleDateFormat
-    var dateForm: SimpleDateFormat
-
-    //public native void SetTime(String value);
-    //public native void SetDate(String value);
     init {
         InitializePaints()
         isFocusableInTouchMode = false
         setBackgroundColor(Color.TRANSPARENT)
-        //time = new Date();
-        timeForm = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
-        dateForm = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-        if (Companion.display != null) FPS = Companion.display!!.refreshRate.toInt()
+        if (display != null) FPS = display!!.refreshRate.toInt()
         sleepTime = (1000 / FPS).toLong()
         mThread = Thread(this)
         mThread.start()
     }
 
+    private fun animateTint(from: Int, to: Int) {
+        val animator = ValueAnimator.ofInt(from, to)
+        animator.duration = 350
+        animator.interpolator = DecelerateInterpolator()
+        animator.addUpdateListener {
+            tintAlpha = it.animatedValue as Int
+            invalidate()
+        }
+        animator.start()
+    }
+
     override fun onDraw(canvas: Canvas) {
-        if (canvas != null && visibility == VISIBLE) {
+        if (isVisible) {
             ClearCanvas(canvas)
-            //time.setTime(System.currentTimeMillis());
-            //SetTime(timeForm.format(time));
-            //SetDate(dateForm.format(time));
             FloatingWindow.DrawOn(this, canvas)
+            applyDarkTintEffect(canvas)
+            if (FloatingWindow.isOpened != previousOpenedState) {
+                previousOpenedState = FloatingWindow.isOpened
+                if (FloatingWindow.isOpened) {
+                    animateTint(0, 200)
+                } else {
+                    animateTint(200, 0)
+                }
+            }
         }
     }
 
@@ -68,10 +83,267 @@ class MenuCanvas(var ctx: Context) : View(ctx), Runnable {
                     ).toLong()
                 )
             } catch (it: InterruptedException) {
-                Log.e("OverlayThread", it.message!!)
+                Log.e("ge.nikka.stclient", it.message!!)
             }
         }
     }
+
+    fun applyDarkTintEffect(canvas: Canvas) {
+        val darkTintPaint = Paint().apply {
+            color = Color.argb(tintAlpha, 0, 0, 0)
+            style = Paint.Style.FILL
+        }
+        canvas.drawRect(0f, 0f, canvas.width.toFloat(), canvas.height.toFloat(), darkTintPaint)
+    }
+
+    fun fastblur(sentBitmap: Bitmap, scale: Float, radius: Int): Bitmap? {
+        var sentBitmap = sentBitmap
+        val width = Math.round(sentBitmap.width * scale)
+        val height = Math.round(sentBitmap.height * scale)
+        sentBitmap = Bitmap.createScaledBitmap(sentBitmap, width, height, false)
+
+        val bitmap = sentBitmap.copy(sentBitmap.config!!, true)
+
+        if (radius < 1) {
+            return (null)
+        }
+
+        val w = bitmap.width
+        val h = bitmap.height
+
+        val pix = IntArray(w * h)
+        bitmap.getPixels(pix, 0, w, 0, 0, w, h)
+
+        val wm = w - 1
+        val hm = h - 1
+        val wh = w * h
+        val div = radius + radius + 1
+
+        val r = IntArray(wh)
+        val g = IntArray(wh)
+        val b = IntArray(wh)
+        var rsum: Int
+        var gsum: Int
+        var bsum: Int
+        var x: Int
+        var y: Int
+        var i: Int
+        var p: Int
+        var yp: Int
+        var yi: Int
+        val vmin = IntArray(max(w.toDouble(), h.toDouble()).toInt())
+
+        var divsum = (div + 1) shr 1
+        divsum *= divsum
+        val dv = IntArray(256 * divsum)
+        i = 0
+        while (i < 256 * divsum) {
+            dv[i] = (i / divsum)
+            i++
+        }
+
+        yi = 0
+        var yw = yi
+
+        val stack = Array(div) { IntArray(3) }
+        var stackpointer: Int
+        var stackstart: Int
+        var sir: IntArray
+        var rbs: Int
+        val r1 = radius + 1
+        var routsum: Int
+        var goutsum: Int
+        var boutsum: Int
+        var rinsum: Int
+        var ginsum: Int
+        var binsum: Int
+
+        y = 0
+        while (y < h) {
+            bsum = 0
+            gsum = bsum
+            rsum = gsum
+            boutsum = rsum
+            goutsum = boutsum
+            routsum = goutsum
+            binsum = routsum
+            ginsum = binsum
+            rinsum = ginsum
+            i = -radius
+            while (i <= radius) {
+                p = pix[(yi + min(wm.toDouble(), max(i.toDouble(), 0.0))).toInt()]
+                sir = stack[i + radius]
+                sir[0] = (p and 0xff0000) shr 16
+                sir[1] = (p and 0x00ff00) shr 8
+                sir[2] = (p and 0x0000ff)
+                rbs = (r1 - abs(i.toDouble())).toInt()
+                rsum += sir[0] * rbs
+                gsum += sir[1] * rbs
+                bsum += sir[2] * rbs
+                if (i > 0) {
+                    rinsum += sir[0]
+                    ginsum += sir[1]
+                    binsum += sir[2]
+                } else {
+                    routsum += sir[0]
+                    goutsum += sir[1]
+                    boutsum += sir[2]
+                }
+                i++
+            }
+            stackpointer = radius
+
+            x = 0
+            while (x < w) {
+                r[yi] = dv[rsum]
+                g[yi] = dv[gsum]
+                b[yi] = dv[bsum]
+
+                rsum -= routsum
+                gsum -= goutsum
+                bsum -= boutsum
+
+                stackstart = stackpointer - radius + div
+                sir = stack[stackstart % div]
+
+                routsum -= sir[0]
+                goutsum -= sir[1]
+                boutsum -= sir[2]
+
+                if (y == 0) {
+                    vmin[x] = min((x + radius + 1).toDouble(), wm.toDouble()).toInt()
+                }
+                p = pix[yw + vmin[x]]
+
+                sir[0] = (p and 0xff0000) shr 16
+                sir[1] = (p and 0x00ff00) shr 8
+                sir[2] = (p and 0x0000ff)
+
+                rinsum += sir[0]
+                ginsum += sir[1]
+                binsum += sir[2]
+
+                rsum += rinsum
+                gsum += ginsum
+                bsum += binsum
+
+                stackpointer = (stackpointer + 1) % div
+                sir = stack[(stackpointer) % div]
+
+                routsum += sir[0]
+                goutsum += sir[1]
+                boutsum += sir[2]
+
+                rinsum -= sir[0]
+                ginsum -= sir[1]
+                binsum -= sir[2]
+
+                yi++
+                x++
+            }
+            yw += w
+            y++
+        }
+        x = 0
+        while (x < w) {
+            bsum = 0
+            gsum = bsum
+            rsum = gsum
+            boutsum = rsum
+            goutsum = boutsum
+            routsum = goutsum
+            binsum = routsum
+            ginsum = binsum
+            rinsum = ginsum
+            yp = -radius * w
+            i = -radius
+            while (i <= radius) {
+                yi = (max(0.0, yp.toDouble()) + x).toInt()
+
+                sir = stack[i + radius]
+
+                sir[0] = r[yi]
+                sir[1] = g[yi]
+                sir[2] = b[yi]
+
+                rbs = (r1 - abs(i.toDouble())).toInt()
+
+                rsum += r[yi] * rbs
+                gsum += g[yi] * rbs
+                bsum += b[yi] * rbs
+
+                if (i > 0) {
+                    rinsum += sir[0]
+                    ginsum += sir[1]
+                    binsum += sir[2]
+                } else {
+                    routsum += sir[0]
+                    goutsum += sir[1]
+                    boutsum += sir[2]
+                }
+
+                if (i < hm) {
+                    yp += w
+                }
+                i++
+            }
+            yi = x
+            stackpointer = radius
+            y = 0
+            while (y < h) {
+                // Preserve alpha channel: ( 0xff000000 & pix[yi] )
+                pix[yi] =
+                    (-0x1000000 and pix[yi]) or (dv[rsum] shl 16) or (dv[gsum] shl 8) or dv[bsum]
+
+                rsum -= routsum
+                gsum -= goutsum
+                bsum -= boutsum
+
+                stackstart = stackpointer - radius + div
+                sir = stack[stackstart % div]
+
+                routsum -= sir[0]
+                goutsum -= sir[1]
+                boutsum -= sir[2]
+
+                if (x == 0) {
+                    vmin[y] = (min((y + r1).toDouble(), hm.toDouble()) * w).toInt()
+                }
+                p = x + vmin[y]
+
+                sir[0] = r[p]
+                sir[1] = g[p]
+                sir[2] = b[p]
+
+                rinsum += sir[0]
+                ginsum += sir[1]
+                binsum += sir[2]
+
+                rsum += rinsum
+                gsum += ginsum
+                bsum += binsum
+
+                stackpointer = (stackpointer + 1) % div
+                sir = stack[stackpointer]
+
+                routsum += sir[0]
+                goutsum += sir[1]
+                boutsum += sir[2]
+
+                rinsum -= sir[0]
+                ginsum -= sir[1]
+                binsum -= sir[2]
+
+                yi += w
+                y++
+            }
+            x++
+        }
+        bitmap.setPixels(pix, 0, w, 0, 0, w, h)
+        return (bitmap)
+    }
+
+
 
     fun InitializePaints() {
         mStrokePaint = Paint()
@@ -303,5 +575,18 @@ class MenuCanvas(var ctx: Context) : View(ctx), Runnable {
     companion object {
         @JvmField
         var display: Display? = null
+        @JvmField
+        var tintAlpha = 0
+        fun fadein(): Animation {
+            val fadeOut: Animation = AlphaAnimation(1f, 0f)
+            fadeOut.duration = 300
+            return fadeOut
+        }
+
+        fun fadeout(): Animation {
+            val fadeIn: Animation = AlphaAnimation(0f, 1f)
+            fadeIn.duration = 300
+            return fadeIn
+        }
     }
 }
