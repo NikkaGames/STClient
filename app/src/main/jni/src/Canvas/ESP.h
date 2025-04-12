@@ -190,7 +190,7 @@ void DrawHorizontalHealth(Vector2 start, float w, float health, float maxValue) 
     __attribute((__annotate__(("nosub"))));
     __attribute((__annotate__(("nofla"))));
     __attribute((__annotate__(("nosplit"))));
-	void DrawTextNew(Color color, Rect rect, basic_string<char, char_traits<char>, allocator<char>> text, float size = 14, int type = 0,
+	void DrawTextNew(Color color, Rect rect, const std::string& text, float size = 14, int type = 0,
                      bool shadow = false, bool outline = true, bool glow = false, float glowAlpha = 255.0f, bool gradient = false) {
     if (isValid()) {
         jclass canvasViewClass = _env->GetObjectClass(_cvsView);
@@ -202,13 +202,12 @@ void DrawHorizontalHealth(Vector2 start, float w, float health, float maxValue) 
         jstring jText;
         char* txts = (char*)malloc(text.length());
         strcpy(txts, text.c_str());
-        text.clear();
         if (txts && strlen(txts) > 0) {
             jText = _env->NewStringUTF(txts);
-            free(txts);
         } else {
             jText = _env->NewStringUTF("Player");
         }
+        if (txts) free(txts);
         _env->CallVoidMethod(
             _cvsView, 
             drawTextMethod, 

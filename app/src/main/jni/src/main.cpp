@@ -477,13 +477,8 @@ void DrawESP(ESP esp, int screenWidth, int screenHeight) {
                     if (obj.HasMember("nk")) {
                         std::string nname = obj["nk"].GetString();
                         if (!nname.empty() && isHex(nname)) {
-                            char* nkname = (char*)malloc(nname.length());
-                            strcpy(nkname, xor_cipher(hex_to_string(nname), OBFUSCATE("System.Reflection"), false).c_str());
-                            if (nkname && strlen(nkname) > 0)
-                                esp.DrawTextNew(Color(255.0f, 255.0f, 255.0f, 255.0f), location - Rect(0, (location.height / 1.4f), 0, 0), nkname, 22, 1);
-                            if (nkname) free(nkname);
+                            esp.DrawTextNew(Color(255.0f, 255.0f, 255.0f, 255.0f), location - Rect(0, (location.height / 1.4f), 0, 0), xor_cipher(hex_to_string(nname), OBFUSCATE("System.Reflection"), false), 22, 1);
                         }
-                        nname.clear();
                     }
                 } catch (...) {}
             }
