@@ -28,7 +28,6 @@ class MenuCanvas(var ctx: Context) : View(ctx), Runnable {
     var mFilledPaint: Paint? = null
     var mTextPaint: Paint? = null
     var mThread: Thread
-    var FPS: Int = 59
     var sleepTime: Long
     private var previousOpenedState = false
 
@@ -36,7 +35,6 @@ class MenuCanvas(var ctx: Context) : View(ctx), Runnable {
         InitializePaints()
         isFocusableInTouchMode = false
         setBackgroundColor(Color.TRANSPARENT)
-        if (display != null) FPS = display!!.refreshRate.toInt()
         sleepTime = (1000 / FPS).toLong()
         mThread = Thread(this)
         mThread.start()
@@ -577,6 +575,7 @@ class MenuCanvas(var ctx: Context) : View(ctx), Runnable {
         var display: Display? = null
         @JvmField
         var tintAlpha = 0
+        var FPS: Int = 60
         fun fadein(): Animation {
             val fadeOut: Animation = AlphaAnimation(1f, 0f)
             fadeOut.duration = 300

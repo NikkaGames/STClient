@@ -16,7 +16,7 @@ android {
         minSdk 26
         targetSdk 35
         versionCode 39
-        versionName "3.9-sweet"
+        versionName "3.9"
         
         ndk {
             abiFilters  'arm64-v8a'

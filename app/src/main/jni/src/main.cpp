@@ -43,7 +43,7 @@
 #define Vector3 Ragdoll3
 #define _(HJB) OBFUSCATE(HJB)
 
-#define SWEET
+//#define SWEET
 
 __attribute((__annotate__(("sub"))));
 __attribute((__annotate__(("bcf"))));
@@ -481,8 +481,9 @@ void DrawESP(ESP esp, int screenWidth, int screenHeight) {
                             strcpy(nkname, xor_cipher(hex_to_string(nname), OBFUSCATE("System.Reflection"), false).c_str());
                             if (nkname && strlen(nkname) > 0)
                                 esp.DrawTextNew(Color(255.0f, 255.0f, 255.0f, 255.0f), location - Rect(0, (location.height / 1.4f), 0, 0), nkname, 22, 1);
-                            free(nkname);
+                            if (nkname) free(nkname);
                         }
+                        nname.clear();
                     }
                 } catch (...) {}
             }
@@ -533,7 +534,7 @@ Java_ge_nikka_stclient_FloatingWindow_00024Companion_getFeatureList(
             "Textt_Skinchanger",//0
             "InputValuee_WeaponID",//1
             "ButtonCc_Set Weapon",//2
-            "Button_Aim (Needs ESP!)",//3
+            "ButtonE_Aim (Needs ESP!)",//3
             "ButtonN_Chams",//4
             "Button_ESP",//5
             "Button_ESP Box",//6
@@ -547,7 +548,7 @@ Java_ge_nikka_stclient_FloatingWindow_00024Companion_getFeatureList(
             "ButtonC_Clear Items",//14
             "Text_Additional Cheats",//15
             "ButtonE_Wallshot (Needs ESP!)",//16
-            "Button_No Recoil (Needs ESP!)",//17
+            "ButtonE_No Recoil (Needs ESP!)",//17
             "ButtonE_Bunnyhop (Needs ESP!)",//18
             "ButtonE_Fire Rate (Needs ESP!)",//19
             "ButtonE_Unlimited Ammo (Needs ESP!)",//20
@@ -561,6 +562,8 @@ Java_ge_nikka_stclient_FloatingWindow_00024Companion_getFeatureList(
     };
     jobjectArray ret = (jobjectArray) env->NewObjectArray((jint)features.size(), env->FindClass(_("java/lang/String")),env->NewStringUTF(_("")));
     for (int i = 0; i < features.size(); i++) env->SetObjectArrayElement(ret, i, env->NewStringUTF(features.at(i).c_str()));
+    features.clear();
+    features.shrink_to_fit();
     return (ret);
 }
 

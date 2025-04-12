@@ -22,6 +22,7 @@ import android.renderscript.ScriptIntrinsicBlur
 import android.util.Log
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -98,9 +99,14 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         thiz = this
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            MenuCanvas.display = this.display
+        val refreshRate: Float = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            this.display?.refreshRate ?: 60f
+        } else {
+            @Suppress("DEPRECATION")
+            val wm = this.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+            wm.defaultDisplay.refreshRate
         }
+        MenuCanvas.FPS = refreshRate.toInt()
         System.loadLibrary("qcomm")
         requestPermissions(this)
         setContent {
