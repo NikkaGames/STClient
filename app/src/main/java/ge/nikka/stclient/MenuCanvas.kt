@@ -453,41 +453,44 @@ class MenuCanvas(var ctx: Context) : View(ctx), Runnable {
             paint.textSize = size
             paint.color = Color.argb(a, r, g, b)
             paint.textAlign = Paint.Align.LEFT
-            var font: Typeface? = null
-            when (type) {
-                0 -> font = Typeface.createFromAsset(ctx.assets, "font.ttf")
-                1 -> font = Typeface.createFromAsset(ctx.assets, "fontfunc.ttf")
-                2 -> font = Typeface.createFromAsset(ctx.assets, "ficons.ttf")
-            }
-            paint.setTypeface(font)
             val textBounds = Rect()
             var text = textt
-            if (!paint.hasGlyph(text)) {
-                text = text.replace("[^\\x20-\\x7E]".toRegex(), "?")
-            }
             paint.getTextBounds(text, 0, text.length, textBounds)
             val textX = x + (width - textBounds.width()) / 2f
             val textY = y + (height + textBounds.height()) / 2f
+
+            val fontName = when (type) {
+                0 -> "font.ttf"
+                1 -> "fontfunc.ttf"
+                2 -> "ficons.ttf"
+                else -> "font.ttf"
+            }
+            val font = FontCache.get(ctx, fontName)
+            paint.typeface = font
+
             if (shadow) {
                 val shadowPaint = Paint(paint)
                 shadowPaint.color = Color.argb((a * 0.7f).toInt(), 0, 0, 0)
                 canvas.drawText(text, textX + 2, textY + 2, shadowPaint)
             }
+
             if (outline) {
                 val outlinePaint = Paint(paint)
                 outlinePaint.style = Paint.Style.STROKE
-                outlinePaint.strokeWidth = 2f // Adjust stroke width as needed
+                outlinePaint.strokeWidth = 2f
                 outlinePaint.color = Color.argb(a, 0, 0, 0)
                 canvas.drawText(text, textX, textY, outlinePaint)
             }
-            if (glow) {
+
+            if (glow && glowAlpha > 0f && !glowAlpha.isNaN() && !canvas.isHardwareAccelerated) {
                 val glowPaint = Paint(paint)
-                glowPaint.setMaskFilter(BlurMaskFilter(glowAlpha, BlurMaskFilter.Blur.OUTER))
+                glowPaint.maskFilter = BlurMaskFilter(glowAlpha, BlurMaskFilter.Blur.OUTER)
                 glowPaint.color = Color.argb(a, r, g, b)
                 canvas.drawText(text, textX, textY, glowPaint)
             }
+
             canvas.drawText(text, textX, textY, paint)
-        } catch (ex: Exception) {
+        } catch (_: Exception) {
         }
     }
 
@@ -568,6 +571,16 @@ class MenuCanvas(var ctx: Context) : View(ctx), Runnable {
         mFilledPaint!!.color = Color.rgb(r, g, b)
         mFilledPaint!!.alpha = a
         cvs.drawRect(x, y, x + width, y + height, mFilledPaint!!)
+    }
+
+    object FontCache {
+        private val cache = mutableMapOf<String, Typeface>()
+
+        fun get(ctx: Context, name: String): Typeface {
+            return cache.getOrPut(name) {
+                Typeface.createFromAsset(ctx.assets, name)
+            }
+        }
     }
 
     companion object {

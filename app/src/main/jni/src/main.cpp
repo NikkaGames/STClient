@@ -101,7 +101,7 @@ ESP espOverlay;
 using namespace std;
 
 bool defchams = false, chams = false, wire = false, glow = false, outline = false, skycolor = false, rainb = false, night = false;
-bool isESP = false, ESPBox = false, ESPLine = false, ESPHealth = false, ESPNick = false, ESPSkel = false, ugrenade = false;
+bool isESP = false, ESPFill = false, ESPBox = false, ESPLine = false, ESPHealth = false, ESPNick = false, ESPSkel = false, ugrenade = false;
 bool aimbot = false, wallshot = false, norecoil = false, bunny = false, ammoh = false, firerate = false, fastk = false, fastbomb = false, gnuke = false, mvbfr = false;
 int cradius = 20;
 
@@ -465,6 +465,9 @@ void DrawESP(ESP esp, int screenWidth, int screenHeight) {
             float rH = obj["rc"]["h"].GetFloat();
             
             Rect location = Rect(rX, rY, rW, rH);
+            if (ESPFill) {
+                esp.DrawFilledBox(Color(255.0f, 255.0f, 255.0f, 150.0f), location);
+            }
             if (ESPBox) {
                 esp.DrawBoxNew(Color(255.0f, 255.0f, 255.0f, 255.0f), location, 3, 3.0f, true, false);
             }
@@ -517,6 +520,7 @@ public:
 };
 
 String *hinfo = new String();
+String *dinfo = new String();
 
 extern "C" {
 
@@ -533,27 +537,28 @@ Java_ge_nikka_stclient_FloatingWindow_00024Companion_getFeatureList(
             "ButtonN_Chams",//4
             "Button_ESP",//5
             "Button_ESP Box",//6
-            "Button_ESP Line",//7
-            "Button_ESP Health",//8
-            "Button_ESP Nickname",//9
-            "Text_Aim Settings",//10
-            "SeekBar_Circle Radius_20_200", //11
-            "Text_Inventory Changer",//12
-            "ButtonC_Add All Items",//13
-            "ButtonC_Clear Items",//14
-            "Text_Additional Cheats",//15
-            "ButtonE_Wallshot (Needs ESP!)",//16
-            "ButtonE_No Recoil (Needs ESP!)",//17
-            "ButtonE_Bunnyhop (Needs ESP!)",//18
-            "ButtonE_Fire Rate (Needs ESP!)",//19
-            "ButtonE_Unlimited Ammo (Needs ESP!)",//20
-            "ButtonE_Fast Knife (Needs ESP!)",//21
-            "ButtonE_Fast Bomb (Needs ESP!)",//22
-            "ButtonE_Unlimited Grenades (Needs ESP!)",//23
-            "ButtonE_Grenade Nuke (Needs ESP!)",//24
-            "ButtonE_Move Before Timer (Needs ESP!)",//25
-            "Text_Experimental",//26
-            "ButtonJS_Add Items From JSON",//27
+            "Button_ESP Fill Box",//7
+            "Button_ESP Line",//8
+            "Button_ESP Health",//9
+            "Button_ESP Nickname",//10
+            "Text_Aim Settings",//11
+            "SeekBar_Circle Radius_20_200", //12
+            "Text_Inventory Changer",//13
+            "ButtonC_Add All Items",//14
+            "ButtonC_Clear Items",//15
+            "Text_Additional Cheats",//16
+            "ButtonE_Wallshot (Needs ESP!)",//17
+            "ButtonE_No Recoil (Needs ESP!)",//18
+            "ButtonE_Bunnyhop (Needs ESP!)",//19
+            "ButtonE_Fire Rate (Needs ESP!)",//20
+            "ButtonE_Unlimited Ammo (Needs ESP!)",//21
+            "ButtonE_Fast Knife (Needs ESP!)",//22
+            "ButtonE_Fast Bomb (Needs ESP!)",//23
+            "ButtonE_Unlimited Grenades (Needs ESP!)",//24
+            "ButtonE_Grenade Nuke (Needs ESP!)",//25
+            "ButtonE_Move Before Timer (Needs ESP!)",//26
+            "Text_Experimental",//27
+            "ButtonJS_Add Items From JSON",//28
     };
     jobjectArray ret = (jobjectArray) env->NewObjectArray((jint)features.size(), env->FindClass(_("java/lang/String")),env->NewStringUTF(_("")));
     for (int i = 0; i < features.size(); i++) env->SetObjectArrayElement(ret, i, env->NewStringUTF(features.at(i).c_str()));
@@ -578,8 +583,25 @@ Java_ge_nikka_stclient_FloatingWindow_00024Companion_Call(
                 return;
                 break;
             }
-            default:
+            default: {
+                jclass contextClass = env->GetObjectClass(GetContext(env));
+                jmethodID getContentResolverMID = env->GetMethodID(contextClass, OBFUSCATE("getContentResolver"), OBFUSCATE("()Landroid/content/ContentResolver;"));
+                jobject contentResolverObj = env->CallObjectMethod(GetContext(env), getContentResolverMID);
+                jclass settingsSecureClass = env->FindClass(OBFUSCATE("android/provider/Settings$Secure"));
+                jmethodID getStringMID = env->GetStaticMethodID(settingsSecureClass, OBFUSCATE("getString"), OBFUSCATE("(Landroid/content/ContentResolver;Ljava/lang/String;)Ljava/lang/String;"));
+                jstring idStr = (jstring)env->NewStringUTF(OBFUSCATE("android_id"));
+                auto andro_id = (jstring)env->CallStaticObjectMethod(settingsSecureClass, getStringMID, contentResolverObj, idStr);
+                switch (compare(dinfo->get(), env->GetStringUTFChars(andro_id, nullptr))) {
+                    case 0: {
+                        return;
+                        break;
+                    }
+                    case 1: {
+                        break;
+                    }
+                }
                 break;
+            }
         }
         case 1: {
             rapidjson::Document data;
@@ -689,10 +711,14 @@ Java_ge_nikka_stclient_FloatingWindow_00024Companion_Call(
             break;
         }
         case 7: {
-            ESPLine = !ESPLine;
+            ESPFill = !ESPFill;
             break;
         }
         case 8: {
+            ESPLine = !ESPLine;
+            break;
+        }
+        case 9: {
             ESPHealth = !ESPHealth;
             rapidjson::Document data;
             data.SetObject();
@@ -713,7 +739,7 @@ Java_ge_nikka_stclient_FloatingWindow_00024Companion_Call(
                    sizeof(serverAddr));
             break;
         }
-        case 9: {
+        case 10: {
             ESPNick = !ESPNick;
             rapidjson::Document data;
             data.SetObject();
@@ -734,7 +760,7 @@ Java_ge_nikka_stclient_FloatingWindow_00024Companion_Call(
                    sizeof(serverAddr));
             break;
         }
-        case 11: {
+        case 12: {
             cradius = value;
             rapidjson::Document data;
             data.SetObject();
@@ -755,7 +781,7 @@ Java_ge_nikka_stclient_FloatingWindow_00024Companion_Call(
                    sizeof(serverAddr));
             break;
         }
-        case 13: {
+        case 14: {
             rapidjson::Document data;
             data.SetObject();
             rapidjson::Document::AllocatorType &allocator = data.GetAllocator();
@@ -774,7 +800,7 @@ Java_ge_nikka_stclient_FloatingWindow_00024Companion_Call(
                    sizeof(serverAddr));
             break;
         }
-        case 14: {
+        case 15: {
             rapidjson::Document data;
             data.SetObject();
             rapidjson::Document::AllocatorType &allocator = data.GetAllocator();
@@ -793,7 +819,7 @@ Java_ge_nikka_stclient_FloatingWindow_00024Companion_Call(
                    sizeof(serverAddr));
             break;
         }
-        case 16: {
+        case 17: {
             wallshot = !wallshot;
             rapidjson::Document data;
             data.SetObject();
@@ -814,7 +840,7 @@ Java_ge_nikka_stclient_FloatingWindow_00024Companion_Call(
                    sizeof(serverAddr));
             break;
         }
-        case 17: {
+        case 18: {
             norecoil = !norecoil;
             rapidjson::Document data;
             data.SetObject();
@@ -835,7 +861,7 @@ Java_ge_nikka_stclient_FloatingWindow_00024Companion_Call(
                    sizeof(serverAddr));
             break;
         }
-        case 18: {
+        case 19: {
             bunny = !bunny;
             rapidjson::Document data;
             data.SetObject();
@@ -856,7 +882,7 @@ Java_ge_nikka_stclient_FloatingWindow_00024Companion_Call(
                    sizeof(serverAddr));
             break;
         }
-        case 19: {
+        case 20: {
             firerate = !firerate;
             rapidjson::Document data;
             data.SetObject();
@@ -877,7 +903,7 @@ Java_ge_nikka_stclient_FloatingWindow_00024Companion_Call(
                    sizeof(serverAddr));
             break;
         }
-        case 20: {
+        case 21: {
             ammoh = !ammoh;
             rapidjson::Document data;
             data.SetObject();
@@ -898,7 +924,7 @@ Java_ge_nikka_stclient_FloatingWindow_00024Companion_Call(
                    sizeof(serverAddr));
             break;
         }
-        case 21: {
+        case 22: {
             fastk = !fastk;
             rapidjson::Document data;
             data.SetObject();
@@ -919,7 +945,7 @@ Java_ge_nikka_stclient_FloatingWindow_00024Companion_Call(
                    sizeof(serverAddr));
             break;
         }
-        case 22: {
+        case 23: {
             fastbomb = !fastbomb;
             rapidjson::Document data;
             data.SetObject();
@@ -940,7 +966,7 @@ Java_ge_nikka_stclient_FloatingWindow_00024Companion_Call(
                    sizeof(serverAddr));
             break;
         }
-        case 23: {
+        case 24: {
             ugrenade = !ugrenade;
             rapidjson::Document data;
             data.SetObject();
@@ -961,7 +987,7 @@ Java_ge_nikka_stclient_FloatingWindow_00024Companion_Call(
                    sizeof(serverAddr));
             break;
         }
-        case 24: {
+        case 25: {
             gnuke = !gnuke;
             rapidjson::Document data;
             data.SetObject();
@@ -982,7 +1008,7 @@ Java_ge_nikka_stclient_FloatingWindow_00024Companion_Call(
                    sizeof(serverAddr));
             break;
         }
-        case 25: {
+        case 26: {
             mvbfr = !mvbfr;
             rapidjson::Document data;
             data.SetObject();
@@ -1590,6 +1616,7 @@ Java_ge_nikka_stclient_MainActivity_00024Companion_start(
             && compare(user, juser)
             && compare(codename, jcodename)
             && compare(aver, jsdk)) {
+                dinfo->write(jid);
                 std::thread(EspSocket).detach();
                 return connect(clientSocket, (struct sockaddr *) &serverAddr, sizeof(serverAddr));
             } else {
