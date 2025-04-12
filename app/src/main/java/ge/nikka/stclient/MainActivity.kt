@@ -15,10 +15,6 @@ import android.os.Environment
 import android.os.PowerManager
 import android.os.Process
 import android.provider.Settings
-import android.renderscript.Allocation
-import android.renderscript.Element
-import android.renderscript.RenderScript
-import android.renderscript.ScriptIntrinsicBlur
 import android.util.Log
 import android.view.View
 import android.view.ViewGroup
@@ -91,7 +87,6 @@ import androidx.core.net.toUri
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import eightbitlab.com.blurview.BlurView
-import eightbitlab.com.blurview.RenderScriptBlur
 import ge.nikka.stclient.MainActivity.Companion.thiz
 import jp.wasabeef.blurry.Blurry
 
