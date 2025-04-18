@@ -1,14 +1,10 @@
 package ge.nikka.stclient
 
 import android.Manifest
-import android.annotation.TargetApi
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.drawable.BitmapDrawable
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
@@ -16,17 +12,12 @@ import android.os.PowerManager
 import android.os.Process
 import android.provider.Settings
 import android.util.Log
-import android.view.View
-import android.view.ViewGroup
 import android.view.WindowManager
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.annotation.RequiresApi
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -63,34 +54,30 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.RenderEffect
-import androidx.compose.ui.graphics.Shader
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.ActivityCompat
-import ge.nikka.stclient.ui.theme.STClientTheme
 import androidx.core.net.toUri
+import com.topjohnwu.superuser.Shell
+import ge.nikka.stclient.MainActivity.Companion.thiz
+import ge.nikka.stclient.ui.theme.STClientTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import eightbitlab.com.blurview.BlurView
-import ge.nikka.stclient.MainActivity.Companion.thiz
-import jp.wasabeef.blurry.Blurry
+import java.io.IOException
+
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         thiz = this
@@ -109,6 +96,13 @@ class MainActivity : ComponentActivity() {
                 MainScreen()
             }
         }
+        Shell.getShell { shell: Shell? ->
+            if (shell!!.isRoot)
+                Log.d("ge.nikka.stclient", "Root detected")
+            else
+                Log.e("ge.nikka.stclient", "Root not found")
+        }
+        Shell.cmd("getenforce").submit();
     }
 
     override fun onDestroy() {
@@ -307,7 +301,9 @@ fun MainScreen() {
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            modifier = Modifier.fillMaxWidth().padding(start = 32.dp, end = 32.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 32.dp, end = 32.dp),
                             text = "Your device is unrecognized and can't be allowed to continue!",
                             color = Color.White,
                             fontSize = 16.sp,

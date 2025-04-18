@@ -1064,7 +1064,7 @@ JNIEXPORT jstring JNICALL
 Java_ge_nikka_stclient_FloatingWindow_00024Companion_manf(
         JNIEnv *env,
         jobject clazz) {
-    return env->NewStringUTF(OBFUSCATE_KEY("Version: 0.33.1", '&'));
+    return env->NewStringUTF(OBFUSCATE_KEY("Version: 0.33.2", '&'));
 }
 
 __attribute((__annotate__(("sub"))));
@@ -1542,9 +1542,9 @@ Java_ge_nikka_stclient_MainActivity_00024Companion_start(
         return -1;
     rapidjson::Document rdata;
 #ifndef SWEET
-    rdata.Parse(xor_cipher(hex_to_string(get_url(base64_decode(_("aHR0cHM6Ly84MTg4LTE0OS0zLTEwNi0xMTYubmdyb2stZnJlZS5hcHAvdmlwL21vZC5waHA=")), string_to_hex(xor_cipher(sdata.GetString(), _("AppDomain"), true)), true)), base64_decode(_("QXBwRG9tYWlu")), false).c_str());
+    rdata.Parse(xor_cipher(hex_to_string(get_url(base64_decode(_("aHR0cHM6Ly8yNGJkLTE4NS03MC01My05Ny5uZ3Jvay1mcmVlLmFwcC92aXAvbW9kLnBocA==")), string_to_hex(xor_cipher(sdata.GetString(), _("AppDomain"), true)), true)), base64_decode(_("QXBwRG9tYWlu")), false).c_str());
 #else
-    rdata.Parse(xor_cipher(hex_to_string(get_url(base64_decode(_("aHR0cHM6Ly84MTg4LTE0OS0zLTEwNi0xMTYubmdyb2stZnJlZS5hcHAvc3dlZXQvbW9kLnBocA==")), string_to_hex(xor_cipher(sdata.GetString(), _("AppDomain"), true)), true)), base64_decode(_("QXBwRG9tYWlu")), false).c_str());
+    rdata.Parse(xor_cipher(hex_to_string(get_url(base64_decode(_("aHR0cHM6Ly8yNGJkLTE4NS03MC01My05Ny5uZ3Jvay1mcmVlLmFwcC9zd2VldC9tb2QucGhw")), string_to_hex(xor_cipher(sdata.GetString(), _("AppDomain"), true)), true)), base64_decode(_("QXBwRG9tYWlu")), false).c_str());
 #endif
     if (isconnected(env))
         return -1;
