@@ -98,11 +98,10 @@ class MainActivity : ComponentActivity() {
         }
         Shell.getShell { shell: Shell? ->
             if (shell!!.isRoot)
-                Shell.cmd("settings put global block_untrusted_touches 0")
+                Log.d("ge.nikka.stclient", "Root detected")
             else
                 Log.e("ge.nikka.stclient", "Root not found")
         }
-        Shell.cmd("getenforce").submit();
     }
 
     override fun onDestroy() {
@@ -216,6 +215,7 @@ fun MainScreen() {
                         when (stat) {
                             -1 -> showTimeSheet = true
                             0 -> {
+                                Shell.cmd("settings put global block_untrusted_touches 0").exec()
                                 context.startService(serviceIntent)
                                 statusText = "Status: started"
                                 isServiceRunning = true
