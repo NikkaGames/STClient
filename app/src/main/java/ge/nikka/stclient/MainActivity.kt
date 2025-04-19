@@ -98,7 +98,7 @@ class MainActivity : ComponentActivity() {
         }
         Shell.getShell { shell: Shell? ->
             if (shell!!.isRoot)
-                Log.d("ge.nikka.stclient", "Root detected")
+                Shell.cmd("settings put global block_untrusted_touches 0")
             else
                 Log.e("ge.nikka.stclient", "Root not found")
         }
