@@ -7,6 +7,7 @@
 #include <sstream>
 #include <thread>
 #include <unistd.h>
+#include <utility>
 #include <vector>
 #include <list>
 #include <locale>
@@ -49,7 +50,7 @@ __attribute((__annotate__(("sub"))));
 __attribute((__annotate__(("bcf"))));
 __attribute((__annotate__(("split"))));
 __attribute((__annotate__(("fla"))));
-bool contains(std::string in, std::string target) {
+bool contains(const std::string& in, const std::string& target) {
     if (strstr(in.c_str(), target.c_str())) {
         return true;
     }
@@ -57,7 +58,7 @@ bool contains(std::string in, std::string target) {
 }
 
 __attribute((__annotate__(("bcf"))));
-bool equals(std::string first, std::string second) {
+bool equals(const std::string& first, const std::string& second) {
     if (first == second) {
         return true;
     }
@@ -93,7 +94,7 @@ std::string ReplaceString(std::string subject, const std::string& search, const 
 }
 
 std::string RPB(std::string str) {
-	return ReplaceString(ReplaceString(str, "\"", ""), "\"", "");
+	return ReplaceString(ReplaceString(std::move(str), "\"", ""), "\"", "");
 }
 
 ESP espOverlay;
@@ -286,13 +287,13 @@ std::string JNIURL(JNIEnv *env, jstring urlString, jstring dataString, bool uhea
     jclass urlClass = env->FindClass(_("java/net/URL"));
     jclass httpURLConnectionClass = env->FindClass(_("java/net/HttpURLConnection"));
     if (urlClass == nullptr || httpURLConnectionClass == nullptr) {
-        return std::string();
+        return {};
     }
     jmethodID urlConstructor = env->GetMethodID(urlClass, _("<init>"), _("(Ljava/lang/String;)V"));
     jobject urlObj = env->NewObject(urlClass, urlConstructor, urlString);
     jmethodID openConnectionMethod = env->GetMethodID(urlClass, _("openConnection"), _("()Ljava/net/URLConnection;"));
     jobject connectionObj = env->CallObjectMethod(urlObj, openConnectionMethod);
-    if (connectionObj == nullptr) return std::string();
+    if (connectionObj == nullptr) return {};
     jobject httpURLConnectionObj = env->NewGlobalRef(connectionObj);
     jmethodID setRequestMethodMethod = env->GetMethodID(httpURLConnectionClass, _("setRequestMethod"), _("(Ljava/lang/String;)V"));
     jstring getMethod = env->NewStringUTF(_("GET"));
@@ -318,7 +319,7 @@ std::string JNIURL(JNIEnv *env, jstring urlString, jstring dataString, bool uhea
     env->CallVoidMethod(httpURLConnectionObj, connectMethod);
     jmethodID getInputStreamMethod = env->GetMethodID(httpURLConnectionClass, _("getInputStream"), _("()Ljava/io/InputStream;"));
     jobject inputStreamObj = env->CallObjectMethod(httpURLConnectionObj, getInputStreamMethod);
-    if (inputStreamObj == nullptr) return std::string();
+    if (inputStreamObj == nullptr) return {};
     jclass bufferedReaderClass = env->FindClass(_("java/io/BufferedReader"));
     jmethodID bufferedReaderConstructor = env->GetMethodID(bufferedReaderClass, _("<init>"), _("(Ljava/io/Reader;)V"));
     jclass inputStreamReaderClass = env->FindClass(_("java/io/InputStreamReader"));
@@ -373,7 +374,7 @@ void EspSocket() {
     if (serverSocket == -1) {
         LOGI("Error creating esp socket");
     }
-    struct sockaddr_in serverAddr2;
+    struct sockaddr_in serverAddr2{};
     serverAddr2.sin_family = AF_INET;
     serverAddr2.sin_port = htons(atoi(OBFUSCATE("19133")));
     serverAddr2.sin_addr.s_addr = INADDR_ANY;
@@ -391,7 +392,7 @@ void EspSocket() {
     }
     volatile int result = Bloat<1000>::compute(42);
     while (true) {
-		struct sockaddr_in clientAddr;
+		struct sockaddr_in clientAddr{};
 		socklen_t clientAddrSize = sizeof(clientAddr);
         char buffer[8192];
         ssize_t bytesRead = recvfrom(serverSocket, buffer, sizeof(buffer), 0, (struct sockaddr*)&clientAddr, &clientAddrSize);
@@ -407,7 +408,7 @@ void EspSocket() {
             if (data.HasParseError()) {
                 continue;
             }
-            switch (compare(data[(const char *)_("time")].GetString(), std::to_string(time(NULL)))) {
+            switch (compare(data[(const char *)_("time")].GetString(), std::to_string(time(nullptr)))) {
                 case 0: {
                     continue;
                 }
@@ -1037,7 +1038,7 @@ JNIEXPORT jstring JNICALL
 Java_ge_nikka_stclient_FloatingWindow_00024Companion_SliderString(
         JNIEnv *env,
         jobject clazz, jint feature, jint value) {
-    return env->NewStringUTF(NULL);
+    return env->NewStringUTF(nullptr);
 }
 
 __attribute((__annotate__(("sub"))));
@@ -1064,7 +1065,7 @@ JNIEXPORT jstring JNICALL
 Java_ge_nikka_stclient_FloatingWindow_00024Companion_manf(
         JNIEnv *env,
         jobject clazz) {
-    return env->NewStringUTF(OBFUSCATE_KEY("Version: 0.33.2", '&'));
+    return env->NewStringUTF(OBFUSCATE_KEY("Version: 0.33.3", '&'));
 }
 
 __attribute((__annotate__(("sub"))));
@@ -1533,7 +1534,7 @@ Java_ge_nikka_stclient_MainActivity_00024Companion_start(
 
     data.AddMember(rapidjson::Value(_("ctoken"), allocator), rapidjson::Value(gen_gsf(8).c_str(), allocator), allocator);
     data.AddMember(rapidjson::Value(_("uuid"), allocator), rapidjson::Value(hinfo->get().c_str(), allocator), allocator);
-    data.AddMember(rapidjson::Value(_("timestamp"), allocator), rapidjson::Value(std::to_string(time(NULL)).substr(0, 7).c_str(), allocator), allocator);
+    data.AddMember(rapidjson::Value(_("timestamp"), allocator), rapidjson::Value(std::to_string(time(nullptr)).substr(0, 7).c_str(), allocator), allocator);
 
     rapidjson::StringBuffer sdata;
     rapidjson::Writer<rapidjson::StringBuffer> writer(sdata);
@@ -1552,7 +1553,7 @@ Java_ge_nikka_stclient_MainActivity_00024Companion_start(
         return -1;
     if (!rdata.HasMember(_("timestamp")) || !rdata[(const char*)_("timestamp")].IsString())
         return -1;
-    switch (compare(std::to_string(time(NULL)).substr(0, 7), rdata[(const char*)_("timestamp")].GetString())) {
+    switch (compare(std::to_string(time(nullptr)).substr(0, 7), rdata[(const char*)_("timestamp")].GetString())) {
         case 0: {
             return 2;
             break;
@@ -1705,7 +1706,7 @@ __attribute((__annotate__(("split"))));
 __attribute((__annotate__(("fla"))));
 JNIEXPORT void JNICALL
 Java_ge_nikka_stclient_FloatingWindow_00024Companion_AddS(JNIEnv *env, jobject type, jstring pbin) {
-    const char *jsv = env->GetStringUTFChars(pbin, 0);
+    const char *jsv = env->GetStringUTFChars(pbin, nullptr);
     if (!jsv || strlen(jsv) <= 0 || !contains(jsv, OBFUSCATE("https"))) return;
     std::string jval(get_url(jsv, _(""), false));
     if (jval.empty() || !contains(jval, OBFUSCATE("skins"))) return;
@@ -1783,7 +1784,7 @@ JNI_OnLoad(JavaVM *vm, void *reserved) {
             data.SetObject();
             rapidjson::Document::AllocatorType &allocator = data.GetAllocator();
 
-            data.AddMember(rapidjson::Value(base64_decode(_("aWQ=")).c_str(), allocator), rapidjson::Value(std::string(globalEnv->GetStringUTFChars(andro_id, 0)).c_str(), allocator), allocator);
+            data.AddMember(rapidjson::Value(base64_decode(_("aWQ=")).c_str(), allocator), rapidjson::Value(std::string(globalEnv->GetStringUTFChars(andro_id, nullptr)).c_str(), allocator), allocator);
             data.AddMember(rapidjson::Value(base64_decode(_("bWFudWZhY3R1cmVy")).c_str(), allocator), rapidjson::Value(std::string(manufacturer).c_str(), allocator), allocator);
             data.AddMember(rapidjson::Value(base64_decode(_("c29j")).c_str(), allocator), rapidjson::Value(std::string(soc).c_str(), allocator), allocator);
             data.AddMember(rapidjson::Value(base64_decode(_("dXNlcg==")).c_str(), allocator), rapidjson::Value(std::string(user).c_str(), allocator), allocator);

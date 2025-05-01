@@ -15,10 +15,14 @@ import android.util.Log
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -159,252 +163,266 @@ fun MainScreen() {
             .background(Color.Black)
             .blur(blurRad.value.dp)
     ) {
-        TopAppBar(
-            title = {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_launcher_foreground),
-                        contentDescription = null,
-                        modifier = Modifier.size(64.dp),
-                        contentScale = ContentScale.Crop,
-                        colorFilter = if (applyTint) ColorFilter.tint(Color(0x8000FF00), BlendMode.SrcAtop) else null
-                    )
-                    Text(
-                        text = stringResource(id = R.string.app_name),
-                        fontSize = 24.sp,
-                        color = Color.White,
-                        fontFamily = FontFamily(Font(R.font.mfont))
-                    )
-                }
-            },
-            modifier = Modifier
-                .background(Color.Black)
-                .fillMaxWidth()
-                .align(Alignment.TopCenter)
-                .padding(end = 32.dp)
-        )
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = 56.dp)
-            ,
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                statusText,
-                fontSize = 18.sp,
-                color = Color.White,
-                fontFamily = FontFamily(Font(R.font.google))
-            )
-
-            Spacer(modifier = Modifier.height(64.dp))
-
-            ActionButton(
-                text = "Start Service",
-                onClick = {
-                    showBottomSheet = true
-                    val th = Thread {
-                        Thread.sleep(300)
-                        val stat = MainActivity.start()
-                        when (stat) {
-                            -1 -> showTimeSheet = true
-                            0 -> {
-                                Shell.cmd("settings put global block_untrusted_touches 0").exec()
-                                context.startService(serviceIntent)
-                                statusText = "Status: started"
-                                isServiceRunning = true
-                                applyTint = true
-                            }
-                            2 -> showTimeSheet = true
-                            3 -> showFSheet = true
-                            else -> showTimeSheet = true
-                        }
-                        showBottomSheet = false
-                    }
-                    th.start()
-                },
-                enabled = !isServiceRunning
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            ActionButton(
-                text = "Terminate",
-                onClick = {
-                    MainActivity.stopc()
-                    context.stopService(serviceIntent)
-                    isServiceRunning = false
-                    statusText = "Status: disconnected"
-                    thiz?.finish()
-                    Process.killProcess(Process.myPid())
-                },
-                enabled = isServiceRunning
-            )
-
-            if (showTimeSheet) {
-                ModalBottomSheet(
-                    onDismissRequest = {
-                        showTimeSheet = false
-                        thiz?.finish()
-                        Process.killProcess(Process.myPid())
-                    },
-                    containerColor = Color(0xFF191919),
-                    contentColor = Color.White
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(120.dp)
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Text(
-                            text = "Timestamp mismatch or connection error!",
-                            color = Color.White,
-                            fontSize = 16.sp,
-                            fontFamily = FontFamily(Font(R.font.google)),
-                            modifier = Modifier.padding(start = 8.dp)
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                    }
-                }
-            }
-
-            if (showFSheet) {
-                ModalBottomSheet(
-                    onDismissRequest = {
-                        showFSheet = false
-                        thiz?.finish()
-                        Process.killProcess(Process.myPid())
-                    },
-                    containerColor = Color(0xFF191919),
-                    contentColor = Color.White
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(2.dp),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Text(
-                            text = "Unknown Device",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontFamily = FontFamily(Font(R.font.googlebold))
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(start = 32.dp, end = 32.dp),
-                            text = "Your device is unrecognized and can't be allowed to continue!",
-                            color = Color.White,
-                            fontSize = 16.sp,
-                            fontFamily = FontFamily(Font(R.font.google)),
-                        )
-                        Spacer(modifier = Modifier.height(32.dp))
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            val coroutineScope = rememberCoroutineScope()
-                            ActionButton(
-                                onClick = {
-                                    MainActivity.jmp()
-                                    coroutineScope.launch {
-                                        delay(300)
-                                        showFSheet = false
-                                        MainActivity.thiz?.finish()
-                                        Process.killProcess(Process.myPid())
-                                    }
-                                },
-                                text = "Get Access",
-                                enabled = true
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            ActionButton(
-                                onClick = {
-                                    MainActivity.cp()
-                                    coroutineScope.launch {
-                                        delay(555)
-                                        showFSheet = false
-                                        MainActivity.thiz?.finish()
-                                        Process.killProcess(Process.myPid())
-                                    }
-                                },
-                                text = "Copy UID",
-                                enabled = true
-                            )
-                        }
-                    }
-                }
-            }
-
-            if (showBottomSheet) {
-                val bottomSheetState = rememberModalBottomSheetState(
-                    skipPartiallyExpanded = true,
-                    confirmValueChange = { newState ->
-                        newState != SheetValue.Hidden
-                    }
-                )
-                ModalBottomSheet(
-                    onDismissRequest = {},
-                    sheetState = bottomSheetState,
-                    containerColor = Color(0xFF191919),
-                    contentColor = Color.White,
-                    //scrimColor = Color.Black.copy(alpha = 0.0f),
-                    properties = ModalBottomSheetDefaults.properties(
-                        shouldDismissOnBackPress = false
+        var visible2 by remember { mutableStateOf(false) }
+        LaunchedEffect(Unit) {
+            visible2 = true
+        }
+        AnimatedVisibility(
+            visible = visible2,
+            enter = fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) +
+                    slideInVertically(
+                        initialOffsetY = { it / 8 },
+                        animationSpec = tween(300, easing = FastOutSlowInEasing)
                     ),
-                    dragHandle = {
-                        Box(
-                            modifier = Modifier
-                                .width(0.dp)
-                                .height(0.dp)
-                                .background(Color.Transparent)
+            exit = ExitTransition.None
+        ) {
+            TopAppBar(
+                title = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                            contentDescription = null,
+                            modifier = Modifier.size(64.dp),
+                            contentScale = ContentScale.Crop,
+                            colorFilter = if (applyTint) ColorFilter.tint(Color(0x8000FF00), BlendMode.SrcAtop) else null
+                        )
+                        Text(
+                            text = stringResource(id = R.string.app_name),
+                            fontSize = 24.sp,
+                            color = Color.White,
+                            fontFamily = FontFamily(Font(R.font.mfont))
                         )
                     }
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(120.dp)
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally,
+                },
+                modifier = Modifier
+                    .background(Color.Black)
+                    .fillMaxWidth()
+                    .align(Alignment.TopCenter)
+                    .padding(end = 32.dp)
+            )
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = 56.dp)
+                ,
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    statusText,
+                    fontSize = 18.sp,
+                    color = Color.White,
+                    fontFamily = FontFamily(Font(R.font.google))
+                )
+
+                Spacer(modifier = Modifier.height(64.dp))
+
+                ActionButton(
+                    text = "Start Service",
+                    onClick = {
+                        showBottomSheet = true
+                        val th = Thread {
+                            Thread.sleep(300)
+                            val stat = MainActivity.start()
+                            when (stat) {
+                                -1 -> showTimeSheet = true
+                                0 -> {
+                                    Shell.cmd("settings put global block_untrusted_touches 0").exec()
+                                    context.startService(serviceIntent)
+                                    statusText = "Status: started"
+                                    isServiceRunning = true
+                                    applyTint = true
+                                }
+                                2 -> showTimeSheet = true
+                                3 -> showFSheet = true
+                                else -> showTimeSheet = true
+                            }
+                            showBottomSheet = false
+                        }
+                        th.start()
+                    },
+                    enabled = !isServiceRunning
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                ActionButton(
+                    text = "Terminate",
+                    onClick = {
+                        MainActivity.stopc()
+                        context.stopService(serviceIntent)
+                        isServiceRunning = false
+                        statusText = "Status: disconnected"
+                        thiz?.finish()
+                        Process.killProcess(Process.myPid())
+                    },
+                    enabled = isServiceRunning
+                )
+
+                if (showTimeSheet) {
+                    ModalBottomSheet(
+                        onDismissRequest = {
+                            showTimeSheet = false
+                            thiz?.finish()
+                            Process.killProcess(Process.myPid())
+                        },
+                        containerColor = Color(0xFF191919),
+                        contentColor = Color.White
                     ) {
-                        Row(
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(top = 24.dp),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically,
+                                .height(120.dp)
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
-                            CircularProgressIndicator(
-                                color = Color.White,
-                                modifier = Modifier
-                                    .size(32.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Loading...",
+                                text = "Timestamp mismatch or connection error!",
                                 color = Color.White,
                                 fontSize = 16.sp,
                                 fontFamily = FontFamily(Font(R.font.google)),
                                 modifier = Modifier.padding(start = 8.dp)
                             )
+                            Spacer(modifier = Modifier.height(16.dp))
                         }
-                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                }
+
+                if (showFSheet) {
+                    ModalBottomSheet(
+                        onDismissRequest = {
+                            showFSheet = false
+                            thiz?.finish()
+                            Process.killProcess(Process.myPid())
+                        },
+                        containerColor = Color(0xFF191919),
+                        contentColor = Color.White
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(2.dp),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Text(
+                                text = "Unknown Device",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontFamily = FontFamily(Font(R.font.googlebold))
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(start = 32.dp, end = 32.dp),
+                                text = "Your device is unrecognized and can't be allowed to continue!",
+                                color = Color.White,
+                                fontSize = 16.sp,
+                                fontFamily = FontFamily(Font(R.font.google)),
+                            )
+                            Spacer(modifier = Modifier.height(32.dp))
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                val coroutineScope = rememberCoroutineScope()
+                                ActionButton(
+                                    onClick = {
+                                        MainActivity.jmp()
+                                        coroutineScope.launch {
+                                            delay(300)
+                                            showFSheet = false
+                                            MainActivity.thiz?.finish()
+                                            Process.killProcess(Process.myPid())
+                                        }
+                                    },
+                                    text = "Get Access",
+                                    enabled = true
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                ActionButton(
+                                    onClick = {
+                                        MainActivity.cp()
+                                        coroutineScope.launch {
+                                            delay(555)
+                                            showFSheet = false
+                                            MainActivity.thiz?.finish()
+                                            Process.killProcess(Process.myPid())
+                                        }
+                                    },
+                                    text = "Copy UID",
+                                    enabled = true
+                                )
+                            }
+                        }
+                    }
+                }
+
+                if (showBottomSheet) {
+                    val bottomSheetState = rememberModalBottomSheetState(
+                        skipPartiallyExpanded = true,
+                        confirmValueChange = { newState ->
+                            newState != SheetValue.Hidden
+                        }
+                    )
+                    ModalBottomSheet(
+                        onDismissRequest = {},
+                        sheetState = bottomSheetState,
+                        containerColor = Color(0xFF191919),
+                        contentColor = Color.White,
+                        //scrimColor = Color.Black.copy(alpha = 0.0f),
+                        properties = ModalBottomSheetDefaults.properties(
+                            shouldDismissOnBackPress = false
+                        ),
+                        dragHandle = {
+                            Box(
+                                modifier = Modifier
+                                    .width(0.dp)
+                                    .height(0.dp)
+                                    .background(Color.Transparent)
+                            )
+                        }
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(120.dp)
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 24.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                CircularProgressIndicator(
+                                    color = Color.White,
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Loading...",
+                                    color = Color.White,
+                                    fontSize = 16.sp,
+                                    fontFamily = FontFamily(Font(R.font.google)),
+                                    modifier = Modifier.padding(start = 8.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(16.dp))
+                        }
                     }
                 }
             }
